@@ -21,15 +21,15 @@ export const createMemberMembershipSchema = z.object({
 
   start_date: z.preprocess(
     (val) => (val ? new Date(val) : undefined),
-    z.date({ required_error: "Start date is required" })
+    z.date({ required_error: "Start date is required" }).optional()
   ),
 
   end_date: z.preprocess(
     (val) => (val ? new Date(val) : undefined),
-    z.date({ required_error: "End date is required" })
+    z.date({ required_error: "End date is required" }).optional()
   ),
 
-  payment_status: paymentStatusEnum.default("unpaid"),
+  payment_status: paymentStatusEnum.default("paid"),
   status: membershipStatusEnum.default("active"),
   is_active: z.boolean().optional().default(true),
 

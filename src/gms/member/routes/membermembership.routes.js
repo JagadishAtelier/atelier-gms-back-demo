@@ -71,4 +71,16 @@ router.patch(
   membermembershipController.restore
 );
 
+router.get(
+  "/membermembership/member/:member_id/active",
+  verifyToken(),
+  membermembershipController.getActiveByMemberId
+);
+
+router.get(
+  "/membermembership/member/:member_id/all",
+  verifyToken(),
+  membermembershipController.getAllByMemberId
+);
+
 export default router;

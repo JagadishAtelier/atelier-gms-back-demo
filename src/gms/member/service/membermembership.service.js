@@ -12,22 +12,54 @@ const memberMembershipService = {
    */
   async create(data, user) {
     try {
-      const requiredFields = ["member_id", "membership_id", "start_date", "end_date"];
+      const requiredFields = ["member_id", "membership_id", "payment_status", "status"];
       for (const field of requiredFields) {
         if (!data[field]) throw new Error(`${field} is required`);
       }
 
-      // Validate member and membership existence
       const member = await Member.findByPk(data.member_id);
       if (!member) throw new Error("Invalid member_id (Member not found)");
 
       const membership = await Membership.findByPk(data.membership_id);
       if (!membership) throw new Error("Invalid membership_id (Membership not found)");
 
+      // Check if member already has memberships
+      const existingMembership = await Membermembership.findOne({
+        where: { member_id: data.member_id },
+        order: [["end_date", "DESC"]],
+      });
+
+      let startDate;
+      const today = new Date();
+
+      if (existingMembership) {
+        const lastEndDate = new Date(existingMembership.end_date);
+        if (lastEndDate >= today) {
+          // If last membership still active, start next day
+          startDate = new Date(lastEndDate);
+          startDate.setDate(startDate.getDate() + 1);
+        } else {
+          // If expired, start today
+          startDate = today;
+        }
+      } else {
+        // No previous membership
+        startDate = today;
+      }
+
+      // Calculate end date automatically based on duration_months
+      const endDate = new Date(startDate);
+      endDate.setMonth(endDate.getMonth() + (membership.duration_months || 1));
+
       // Create record
       const memberMembership = await Membermembership.create({
         id: uuidv4(),
-        ...data,
+        member_id: data.member_id,
+        membership_id: data.membership_id,
+        payment_status: data.payment_status,
+        status: data.status,
+        start_date: startDate,
+        end_date: endDate,
         created_by: user?.id || null,
         created_by_name: user?.username || null,
         created_by_email: user?.email || null,
@@ -39,6 +71,7 @@ const memberMembershipService = {
       throw error;
     }
   },
+
 
   async getAll(options = {}) {
     const {
@@ -153,6 +186,49 @@ const memberMembershipService = {
     });
 
     return { message: "Record reactivated successfully" };
+  },
+
+  async getActiveMembershipsByMemberId(member_id) {
+    try {
+      const today = new Date();
+
+      const activeMemberships = await Membermembership.findAll({
+        where: {
+          member_id,
+          start_date: { [Op.lte]: today },
+          end_date: { [Op.gte]: today },
+          is_active: true, // optional if you use a flag
+        },
+        include: [
+          { model: Member, attributes: ["id", "name", "email", "phone"] },
+          { model: Membership, attributes: ["id", "name", "price", "duration_months"] },
+        ],
+        order: [["end_date", "DESC"]],
+      });
+
+      return activeMemberships;
+    } catch (error) {
+      console.error("❌ Error fetching active memberships:", error.message);
+      throw error;
+    }
+  },
+
+  async getallMenbershipsByMemberId(member_id) {
+    try {
+      const memberships = await Membermembership.findAll({
+        where: { member_id },
+        include: [
+          { model: Member, attributes: ["id", "name", "email", "phone"] },
+          { model: Membership, attributes: ["id", "name", "price", "duration_months"] },
+        ],
+        order: [["createdAt", "DESC"]],
+      });
+
+      return memberships;
+    } catch (error) {
+      console.error("❌ Error fetching memberships:", error.message);
+      throw error;
+    }
   },
 };
 
