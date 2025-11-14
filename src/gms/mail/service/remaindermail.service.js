@@ -18,7 +18,7 @@ const transporter = nodemailer.createTransport({
     pass: process.env.SMTP_PASS       // xsmtpsib-xxxxxxx
   },
   tls: { rejectUnauthorized: false },
-  connectionTimeout: 20000,
+  connectionTimeout: 80000,
 });
 
 // Test SMTP
