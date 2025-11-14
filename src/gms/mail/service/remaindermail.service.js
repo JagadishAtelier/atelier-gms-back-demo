@@ -1,3 +1,4 @@
+// remainderMailService.js
 import nodemailer from "nodemailer";
 import Member from "../../member/models/member.model.js";
 import Membermembership from "../../member/models/membermembership.model.js";
@@ -6,262 +7,214 @@ import { Op } from "sequelize";
 import dotenv from "dotenv";
 
 dotenv.config();
-// =========================
-// SMTP CONFIG
-// =========================
+
+// --------------- SMTP CONFIG (BREVO) -------------------
 const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT || 587,
-    secure: false,
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-    },
+  host: process.env.SMTP_HOST || "smtp-relay.brevo.com",
+  port: parseInt(process.env.SMTP_PORT || "587"),
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER,      // 9b96e4001@smtp-brevo.com
+    pass: process.env.SMTP_PASS       // xsmtpsib-xxxxxxx
+  },
+  tls: { rejectUnauthorized: false },
+  connectionTimeout: 20000,
 });
 
-// Test SMTP connection
-transporter.verify((error, success) => {
-    if (error) {
-        console.error("❌ SMTP Connection Failed:", error);
-    } else {
-        console.log("✅ SMTP Ready to Send Emails");
-    }
+// Test SMTP
+transporter.verify((err, success) => {
+  if (err) {
+    console.error("❌ SMTP Connection Failed:", err.message);
+  } else {
+    console.log("✅ SMTP Ready (Brevo)");
+  }
 });
+
+// VERIFIED sender email
+const VERIFIED_SENDER = "parthiban.atelier@gmail.com";
 
 const remainderMailService = {
 
-    // --------------------------------------------------------------------
-    // SEND REMINDER EMAILS TO ALL PENDING MEMBERS
-    // --------------------------------------------------------------------
-    async sendPaymentReminders() {
-        try {
-            console.log("🔍 Fetching unpaid or expired memberships...");
-
-            const today = new Date();
-
-            const members = await Membermembership.findAll({
-                where: {
-                    payment_status: "unpaid",
-                    end_date: {
-                        [Op.lte]: new Date(today.getTime() + 3 * 86400000)
-                    },
-                    is_active: true
-                },
-                include: [
-                    { model: Member, attributes: ["id", "name", "email", "phone"] },
-                    { model: Membership, attributes: ["id", "name", "price"] }
-                ]
-            });
-
-            if (members.length === 0) {
-                return { message: "No unpaid/expiring memberships found." };
-            }
-
-            for (const record of members) {
-                const { Member: member, Membership: membership } = record;
-
-                if (!member?.email) continue;
-
-                const mailOptions = {
-                    from: `"Gym Admin" <${process.env.SMTP_USER}>`,
-                    to: member.email,
-                    subject: "Payment Reminder - Membership Expiring Soon",
-                    html: `
-                        <h2>Hi ${member.name},</h2>
-                        <p>Your <strong>${membership.name}</strong> membership is expiring soon.</p>
-                        <p><strong>End Date:</strong> ${new Date(record.end_date).toLocaleDateString()}</p>
-                        <p><strong>Pending Payment:</strong> ₹${membership.price}</p>
-                        <br>
-                        <p>Please renew your membership to continue enjoying our services.</p>
-                    `
-                };
-
-                await transporter.sendMail(mailOptions);
-                console.log(`📨 Reminder Mail Sent To: ${member.email}`);
-            }
-
-            return { message: "Reminder emails sent successfully" };
-        } catch (error) {
-            console.error("❌ Error sending reminder emails:", error.message);
-            throw error;
-        }
-    },
-
-    // --------------------------------------------------------------------
-    // SEND REMINDER TO A SINGLE MEMBERSHIP RECORD BY RECORD ID
-    // --------------------------------------------------------------------
-    async sendReminderToSingle(id) {
-        try {
-            const record = await Membermembership.findByPk(id, {
-                include: [
-                    { model: Member, attributes: ["id", "name", "email"] },
-                    { model: Membership, attributes: ["id", "name", "price"] },
-                ]
-            });
-
-            if (!record) throw new Error("Membership record not found");
-
-            const { Member: member, Membership: membership } = record;
-
-            if (!member.email) throw new Error("Member has no email");
-
-            const mailOptions = {
-                from: `"Gym Admin" <${process.env.SMTP_USER}>`,
-                to: member.email,
-                subject: "Payment Reminder",
-                html: `
-                    <h2>Hello ${member.name},</h2>
-                    <p>Your payment for <strong>${membership.name}</strong> is still pending.</p>
-                    <p><strong>Amount:</strong> ₹${membership.price}</p>
-                    <p><strong>End Date:</strong> ${new Date(record.end_date).toLocaleDateString()}</p>
-                `
-            };
-
-            await transporter.sendMail(mailOptions);
-
-            return { message: "Reminder sent successfully", member: member.email };
-        } catch (error) {
-            console.error("❌ Error:", error.message);
-            throw error;
-        }
-    },
-
-    // --------------------------------------------------------------------
-    // ⭐ NEW FUNCTION:
-    // SEND REMINDER BY MEMBER ID — SHOW NEXT PAYMENT DATE + ACTIVE MEMBERSHIP
-    // --------------------------------------------------------------------
-    async sendNextPaymentReminderByMemberId(member_id) {
+  // ========================================================
+  // SEND ALL PAYMENT REMINDERS
+  // ========================================================
+  async sendPaymentReminders() {
     try {
-        // 1) load member 
-        const member = await Member.findByPk(member_id, {
-            attributes: ["id", "name", "email", "phone"],
-        });
-        if (!member) throw new Error("Member not found");
-        if (!member.email) throw new Error("Member has no email.");
+      console.log("🔍 Checking for unpaid + expiring memberships...");
 
-        // 2) try to find active membership
-        const activeRecord = await Membermembership.findOne({
-            where: { member_id, is_active: true },
-            include: [{ model: Membership, attributes: ["id", "name", "price", "duration_months"] }],
-            order: [["end_date", "DESC"]],
-        });
+      const today = new Date();
+      const threeDays = new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000);
 
-        if (activeRecord) {
-            // SENDING NEXT PAYMENT REMINDER
-            const membership = activeRecord.Membership;
-            const nextPaymentDate = new Date(activeRecord.end_date);
-            nextPaymentDate.setDate(nextPaymentDate.getDate() + 1);
+      const records = await Membermembership.findAll({
+        where: {
+          payment_status: "unpaid",
+          end_date: { [Op.lte]: threeDays },
+          is_active: true,
+        },
+        include: [
+          { model: Member, attributes: ["id", "name", "email", "phone"] },
+          { model: Membership, attributes: ["id", "name", "price"] },
+        ],
+        order: [["end_date", "ASC"]],
+      });
 
-            await transporter.sendMail({
-                from: `"Gym Admin" <${process.env.SMTP_USER}>`,
-                to: member.email,
-                subject: "Upcoming Payment Reminder",
-                html: `
-                    <h2>Hello ${member.name},</h2>
-                    <p>Your membership details:</p>
-                    <p><strong>Membership:</strong> ${membership.name}</p>
-                    <p><strong>Next Payment Date:</strong> ${nextPaymentDate.toLocaleDateString()}</p>
-                    <p><strong>Amount:</strong> ₹${membership.price}</p>
-                    <br><p>Please make payment on time.</p>
-                `,
-            });
+      if (!records.length)
+        return { message: "No unpaid memberships", sent: 0, failed: 0 };
 
-            return { message: "Active membership - Reminder sent", to: member.email };
-        }
+      let sentCount = 0;
+      let failedCount = 0;
+      const failures = [];
 
-        // 3) FETCH PAST MEMBERSHIP RECORDS (if any)
-        const allRecords = await Membermembership.findAll({
-            where: { member_id },
-            include: [{ model: Membership, attributes: ["id", "name", "price", "duration_months"] }],
-            order: [["end_date", "DESC"]],
-        });
+      for (const rec of records) {
+        const member = rec.Member;
+        const membership = rec.Membership;
 
-        // 4) NEW REQUIREMENT:
-        //    If NO active membership AND NO membership records => send ALL membership plans
-        if (!allRecords || allRecords.length === 0) {
-            // Fetch all available membership plans
-            const allPlans = await Membership.findAll({
-                attributes: ["id", "name", "price", "duration_months"],
-                order: [["price", "ASC"]],
-            });
+        if (!member?.email) continue;
 
-            let html = `
-                <h2>Hello ${member.name},</h2>
-                <p>You have paid your membership fully till now.</p>
-                <p><strong>Please select a new membership plan to continue attending the gym.</strong></p>
-                <br>
-                <h3>Available Membership Plans:</h3>
-                <ul style="padding-left: 18px;">
-            `;
+        const html = `
+          <div style="font-family: Arial">
+            <h2>Hi ${member.name || "Member"},</h2>
+            <p>Your <b>${membership?.name}</b> membership is expiring soon.</p>
+            <p><b>End Date:</b> ${new Date(rec.end_date).toLocaleDateString()}</p>
+            <p><b>Pending Amount:</b> ₹${membership?.price}</p>
+            <br/>
+            <p>Please renew soon to continue using the gym.</p>
+          </div>
+        `;
 
-            for (const plan of allPlans) {
-                html += `
-                    <li style="margin-bottom: 10px;">
-                        <strong>${plan.name}</strong><br>
-                        Price: ₹${plan.price}<br>
-                        Duration: ${plan.duration_months} months
-                    </li>
-                `;
-            }
-
-            html += `</ul><br><p>Thank you,<br>Gym Management</p>`;
-
-            await transporter.sendMail({
-                from: `"Gym Admin" <${process.env.SMTP_USER}>`,
-                to: member.email,
-                subject: "Select a New Membership Plan",
-                html,
-            });
-
-            return {
-                message: "No records found — Sent all membership plans",
-                to: member.email,
-                plan_count: allPlans.length,
-            };
-        }
-
-        // 5) If records exist (past memberships) -> show them
-        let html = `<h2>Hello ${member.name},</h2>
-            <p>You do not have an active membership. Below are your past membership records:</p>
-            <ul style="padding-left:18px;">`;
-
-        for (const r of allRecords) {
-            const mem = r.Membership || {};
-            const start = r.start_date ? new Date(r.start_date).toLocaleDateString() : "N/A";
-            const end = r.end_date ? new Date(r.end_date).toLocaleDateString() : "N/A";
-
-            html += `
-                <li style="margin-bottom:10px;">
-                    <strong>${mem.name}</strong><br>
-                    Period: ${start} - ${end}<br>
-                    Amount: ₹${mem.price}
-                </li>
-            `;
-        }
-
-        html += `</ul><br><p>Thank you,<br>Gym Management</p>`;
-
-        await transporter.sendMail({
-            from: `"Gym Admin" <${process.env.SMTP_USER}>`,
-            to: member.email,
-            subject: "Select Membership to Renew",
-            html,
-        });
-
-        return {
-            message: "Sent past membership list",
-            to: member.email,
-            count: allRecords.length,
+        const mailOptions = {
+          from: `"Gym Admin" <${VERIFIED_SENDER}>`,
+          to: member.email,
+          subject: "Membership Payment Reminder",
+          html,
         };
 
-    } catch (error) {
-        console.error("❌ Error:", error.message);
-        throw error;
+        try {
+          await transporter.sendMail(mailOptions);
+          sentCount++;
+          console.log(`📨 Sent to ${member.email}`);
+        } catch (err) {
+          failedCount++;
+          console.error(`❌ Failed ${member.email}:`, err.message);
+          failures.push({ email: member.email, error: err.message });
+        }
+      }
+
+      return { message: "Done", sent: sentCount, failed: failedCount, failures };
+
+    } catch (err) {
+      console.error("❌ ERROR sendPaymentReminders:", err.message);
+      throw err;
     }
-},
+  },
 
+  // ========================================================
+  // SEND REMINDER FOR A SINGLE RECORD
+  // ========================================================
+  async sendReminderToSingle(id) {
+    try {
+      const record = await Membermembership.findByPk(id, {
+        include: [
+          { model: Member, attributes: ["id", "name", "email"] },
+          { model: Membership, attributes: ["id", "name", "price"] },
+        ],
+      });
 
+      if (!record) throw new Error("Membership record not found");
+      if (!record.Member.email) throw new Error("Member has no email");
 
+      const html = `
+        <div style="font-family: Arial">
+          <h2>Hello ${record.Member.name},</h2>
+          <p>Your payment for <b>${record.Membership?.name}</b> is still pending.</p>
+          <p><b>Amount:</b> ₹${record.Membership?.price}</p>
+        </div>
+      `;
+
+      await transporter.sendMail({
+        from: `"Gym Admin" <${VERIFIED_SENDER}>`,
+        to: record.Member.email,
+        subject: "Payment Reminder",
+        html,
+      });
+
+      console.log(`📨 Sent to ${record.Member.email}`);
+      return { message: "Sent", to: record.Member.email };
+
+    } catch (err) {
+      console.error("❌ ERROR sendReminderToSingle:", err.message);
+      throw err;
+    }
+  },
+
+  // ========================================================
+  // SEND NEXT PAYMENT REMINDER BY MEMBER ID
+  // ========================================================
+  async sendNextPaymentReminderByMemberId(member_id) {
+    try {
+      const member = await Member.findByPk(member_id);
+      if (!member) throw new Error("Member not found");
+      if (!member.email) throw new Error("Member has no email");
+
+      const active = await Membermembership.findOne({
+        where: { member_id, is_active: true },
+        include: [{ model: Membership }],
+        order: [["end_date", "DESC"]],
+      });
+
+      if (active) {
+        const nextPay = new Date(active.end_date);
+        nextPay.setDate(nextPay.getDate() + 1);
+
+        const html = `
+          <div style="font-family: Arial">
+            <h2>Hello ${member.name},</h2>
+            <p>Your membership <b>${active.Membership.name}</b> ends on 
+            <b>${new Date(active.end_date).toLocaleDateString()}</b>.</p>
+            <p><b>Next Payment Date:</b> ${nextPay.toLocaleDateString()}</p>
+            <p><b>Amount:</b> ₹${active.Membership.price}</p>
+          </div>
+        `;
+
+        await transporter.sendMail({
+          from: `"Gym Admin" <${VERIFIED_SENDER}>`,
+          to: member.email,
+          subject: "Upcoming Membership Payment",
+          html,
+        });
+
+        console.log(`📨 Sent to ${member.email}`);
+        return { message: "Sent", to: member.email };
+      }
+
+      // If no active membership → send all plans
+      const plans = await Membership.findAll();
+      let html = `
+        <div style="font-family: Arial">
+          <h2>Hello ${member.name},</h2>
+          <p>You have no active membership. These plans are available:</p>
+          <ul>
+      `;
+      plans.forEach((p) => {
+        html += `<li><b>${p.name}</b> — ₹${p.price} (${p.duration_months} months)</li>`;
+      });
+      html += `</ul></div>`;
+
+      await transporter.sendMail({
+        from: `"Gym Admin" <${VERIFIED_SENDER}>`,
+        to: member.email,
+        subject: "Choose Your New Membership",
+        html,
+      });
+
+      console.log(`📨 Sent plan list to ${member.email}`);
+      return { message: "Sent plan list", to: member.email };
+
+    } catch (err) {
+      console.error("❌ ERROR sendNextPaymentReminderByMemberId:", err.message);
+      throw err;
+    }
+  },
 };
 
 export default remainderMailService;
