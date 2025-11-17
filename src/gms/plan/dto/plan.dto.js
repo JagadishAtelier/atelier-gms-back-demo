@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-// Enums for validation
+// Enums
 const planTypeEnum = z.enum(["Workout Plan", "Diet Plan"], {
   required_error: "Plan type must be either Workout Plan or Diet Plan",
 });
@@ -31,6 +31,9 @@ export const createPlanSchema = z.object({
 
   Description: z.string().optional(),
 
+  // NEW ✔ PDF URL allowed after upload
+  pdf_url: z.string().url().optional(),
+
   is_active: z.boolean().optional().default(true),
 
   created_by: z.string().uuid().optional(),
@@ -53,6 +56,9 @@ export const updatePlanSchema = z.object({
   goals: z.array(z.string()).optional(),
 
   Description: z.string().optional(),
+
+  // NEW ✔ PDF URL allowed for replacing PDF
+  pdf_url: z.string().url().optional(),
 
   is_active: z.boolean().optional(),
 

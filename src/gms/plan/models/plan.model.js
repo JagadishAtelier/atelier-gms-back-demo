@@ -31,6 +31,10 @@ const Plan = sequelize.define("Plan", {
         type: DataTypes.TEXT,
         allowNull: true,
     },
+    pdf_url: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
     is_active: {
         type: DataTypes.BOOLEAN,
         defaultValue: true,
