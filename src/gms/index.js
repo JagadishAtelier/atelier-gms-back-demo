@@ -5,6 +5,7 @@ import memberRoutes from "./member/routes/index.js";
 import dashboardRoutes from "./dashboard/routes/index.js";
 import mailRoutes from "./mail/routes/index.js";
 import planRoutes from "./plan/routes/index.js";
+import gymRoutes from "./gym/routes/index.js";
 
 const router = express.Router();
 
@@ -14,5 +15,6 @@ router.use("/gms", memberRoutes);
 router.use("/gms", dashboardRoutes);
 router.use("/gms", mailRoutes);
 router.use("/gms", planRoutes);
+router.use("/gms", gymRoutes);
 
 export default router;

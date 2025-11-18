@@ -1,13 +1,10 @@
 import express from "express";
 import path from "path";
-import planRouter from "./plan.routes.js";
-import assignPlanRouter from "./assignplan.routes.js";
+import gymRouter from "./gym.routes.js";
 
 const router = express.Router();
 
 router.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
-router.use("/plan", planRouter);
-router.use("/plan", assignPlanRouter);
-
+router.use("/gym", gymRouter);
 
 export default router;
