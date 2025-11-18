@@ -25,7 +25,7 @@ app.use(cors({
 }));
 
 // Handle preflight requests for all routes
-app.options('*', cors());
+app.options('/*', cors());
 
 // Logging & security
 app.use(morgan('dev'));
