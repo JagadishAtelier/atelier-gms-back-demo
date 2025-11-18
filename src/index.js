@@ -24,8 +24,6 @@ app.use(cors({
   credentials: true, // if sending cookies or auth headers
 }));
 
-// Handle preflight requests for all routes
-app.options('/*', cors());
 
 // Logging & security
 app.use(morgan('dev'));
