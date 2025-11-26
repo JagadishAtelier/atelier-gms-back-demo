@@ -1,5 +1,6 @@
 import { sequelize } from '../../../db/index.js';
 import { DataTypes } from 'sequelize';
+import User from '../../../user/models/user.model.js';
 
 const Member = sequelize.define("Member", {
     id: {
@@ -44,6 +45,14 @@ const Member = sequelize.define("Member", {
     join_date: {
         type: DataTypes.DATE,
         allowNull: true,
+    },
+    user_id: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        references: {
+            model: User,
+            key: 'id',
+        },
     },
     is_active: {
         type: DataTypes.BOOLEAN,

@@ -1,34 +1,50 @@
 import { Op } from "sequelize";
 import { v4 as uuidv4 } from "uuid";
 import Member from "../models/member.model.js";
+import User from "../../../user/models/user.model.js";
+import bcrypt from "bcrypt";
 
 const memberService = {
   /**
    * ✅ Create a new member
    */
   async create(data, user) {
-    try {
-      // Required fields
-      const requiredFields = ["name", "email"];
-      for (const field of requiredFields) {
-        if (!data[field]) throw new Error(`${field} is required`);
-      }
-
-      // Create new member
-      const member = await Member.create({
-        id: uuidv4(),
-        ...data,
-        created_by: user?.id || null,
-        created_by_name: user?.username || null,
-        created_by_email: user?.email || null,
-      });
-
-      return member;
-    } catch (error) {
-      console.error("❌ Error creating member:", error.message);
-      throw error;
+  try {
+    // Required fields
+    const requiredFields = ["name", "email", "phone"];
+    for (const field of requiredFields) {
+      if (!data[field]) throw new Error(`${field} is required`);
     }
-  },
+
+    // 1️⃣ Create new member
+    const member = await Member.create({
+      id: uuidv4(),
+      ...data,
+      created_by: user?.id || null,
+      created_by_name: user?.username || null,
+      created_by_email: user?.email || null,
+    });
+
+    // 2️⃣ Create User account for this member
+    const hashedPassword = await bcrypt.hash(data.phone, 10);
+
+    await User.create({
+      id: uuidv4(),
+      role: "member",
+      username: data.name,
+      email: data.email,
+      phone: data.phone,
+      password: hashedPassword,
+      created_by: user?.id || null,
+    });
+
+    return member;
+
+  } catch (error) {
+    console.error("❌ Error creating member:", error.message);
+    throw error;
+  }
+},
 
   /**
    * ✅ Get all members with pagination, search, and filters

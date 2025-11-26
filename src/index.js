@@ -15,13 +15,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // CORS configuration
-const allowedOrigin = 'https://gym-management-system.theateliercreation.com'; // Replace with your frontend domain
+const allowedOrigin = 'https://gym-management-system.theateliercreation.com/'; 
 app.use(cors({
   origin: allowedOrigin,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   exposedHeaders: ["Content-Disposition"],
-  credentials: true, // if sending cookies or auth headers
+  credentials: true, 
 }));
 
 
