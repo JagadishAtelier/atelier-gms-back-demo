@@ -15,7 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // CORS configuration
-const allowedOrigin = '*'; 
+const allowedOrigin = 'https://gym-management-system.theateliercreation.com'; 
 app.use(cors({
   origin: allowedOrigin,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
