@@ -82,6 +82,16 @@ const memberController = {
     }
   },
 
+  async getMembersbyEmail(req, res) {
+    try {
+      const email = req.user.email;
+      const members = await memberService.getMembersbyuserEmail(email);
+      return res.sendSuccess(members, "Members fetched successfully");
+    } catch (error) {
+      return res.sendError(error.message || "Failed to fetch members");
+    }
+  },
+
   /**
    * ✅ Restore Soft Deleted Member
    */

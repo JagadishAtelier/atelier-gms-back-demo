@@ -140,6 +140,15 @@ const memberService = {
     return { message: "Member deactivated successfully" };
   },
 
+  async getMembersbyuserEmail(email) {
+    const members = await Member.findOne({
+      where: {
+        email: email,
+      },
+    });
+    return members;
+  },
+
   /**
    * ✅ Restore a deactivated member
    */

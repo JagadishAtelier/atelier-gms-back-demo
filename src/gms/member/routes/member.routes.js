@@ -53,6 +53,12 @@ router.delete(
   memberController.delete
 );
 
+router.get(
+  "/memberbyemail",
+  verifyToken(),
+  memberController.getMembersbyEmail
+)
+
 /**
  * ✅ Restore Deleted Member
  * Access: Admin, Super Admin
