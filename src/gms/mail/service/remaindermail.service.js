@@ -14,8 +14,8 @@ const transporter = nodemailer.createTransport({
   port: parseInt(process.env.SMTP_PORT || "587"),
   secure: false,
   auth: {
-    user: process.env.SMTP_USER,      // 9b96e4001@smtp-brevo.com
-    pass: process.env.SMTP_PASS       // xsmtpsib-xxxxxxx
+    user: process.env.SMTP_USER,      
+    pass: process.env.SMTP_PASS   
   },
   tls: { rejectUnauthorized: false },
   connectionTimeout: 80000,
