@@ -71,7 +71,7 @@ const memberService = {
 
       // 3️⃣ Send welcome email with credentials
       try {
-        const clientLoginUrl = process.env.CLIENT_LOGIN_URL || "https://your-app.example.com/login";
+        const clientLoginUrl = "https://gym-management-system.theateliercreation.com/";
 
         const html = `
           <div style="font-family: Arial, sans-serif; line-height:1.4;">
