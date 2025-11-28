@@ -3,6 +3,7 @@ import Member from "./member.model.js";
 import Membership from "../../membership/models/membership.model.js";
 import Membermembership from "./membermembership.model.js";
 import Membermeasurement from "./membermeasurement.models.js";
+import Attendance from "../../attendance/models/attendance.models.js";
 
 
 Membermembership.belongsTo(Member, { foreignKey: "member_id" });
@@ -16,4 +17,14 @@ Member.hasMany(Membermeasurement, {
 Membermeasurement.belongsTo(Member, {
   foreignKey: "member_id",
   as: "member",
+});
+
+Attendance.belongsTo(Member, {
+  foreignKey: "member_id",
+  as: "member",
+});
+
+Member.hasMany(Attendance, {
+  foreignKey: "member_id",
+  as: "attendances",
 });
