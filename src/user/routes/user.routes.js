@@ -11,6 +11,8 @@ router.post("/refresh-token", userController.refreshAccessToken);
 router.post("/logout", userController.logoutUser);
 router.post("/send-otp", userController.sendOtpToken);
 router.get("/exists", userController.userAlreadyExists);
+router.post("/forgot-password", userController.sendPasswordResetOtp);
+router.post("/reset-password", userController.resetPasswordWithOtp);
 
 // 🔹 Protected routes (Require valid token)
 router.get("/me/profile", verifyToken(), userController.getMe);

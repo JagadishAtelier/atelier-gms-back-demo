@@ -115,13 +115,11 @@ async create(data, user) {
         {
           model: Plan,
           as: "plan",
-          attributes: ["id", "title"],
           required: false,
         },
         {
           model: Member,
           as: "member",
-          attributes: ["id", "name", "email"],
           required: false,
         },
       ],

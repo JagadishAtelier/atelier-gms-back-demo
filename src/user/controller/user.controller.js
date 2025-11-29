@@ -52,6 +52,7 @@ import {
   userLoginSchema,
   updateUserSchema,
 } from "../dto/user.dto.js";
+import bcrypt from "bcrypt";
 
 const userController = {
   async createUser(req, res) {
@@ -179,6 +180,34 @@ const userController = {
       res.status(400).json({ error: err.message });
     }
   },
+
+async sendPasswordResetOtp(req, res) {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: "email required" });
+
+    const result = await userService.sendPasswordResetOtp(email);
+    res.json({ status: "success", message: result.message, otp_token: result.otp_token });
+  } catch (err) {
+    res.status(400).json({ status: "error", message: err.message });
+  }
+},
+
+async resetPasswordWithOtp(req, res) {
+  try {
+    const { email, otp, otp_token, newPassword } = req.body;
+
+    if (!email || !otp || !otp_token || !newPassword)
+      return res.status(400).json({ error: "email, otp, otp_token, newPassword required" });
+
+    await userService.resetPasswordWithOtp({ email, otp, otp_token, newPassword });
+
+    res.json({ status: "success", message: "Password reset successfully" });
+  } catch (err) {
+    res.status(400).json({ status: "error", message: err.message });
+  }
+},
+
 };
 
 export default userController;
