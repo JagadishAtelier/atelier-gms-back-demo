@@ -46,38 +46,39 @@ const planController = {
    * Create Plan (supports optional file upload under field name 'image')
    */
   async create(req, res) {
-    try {
-      // Normalize body first (especially goals)
-      const normalizedBody = {
-        ...req.body,
-        goals: ensureArrayGoals(req.body?.goals),
-      };
+  try {
+    const body = req.body || {};
 
-      // Validate using your Zod parser (parseZodSchema)
-      const planData = await parseZodSchema(createPlanSchema, normalizedBody);
+    // ✅ get correct Zod validation format
+    const normalized = {
+      title: body.title?.trim() || "",
+      plan_type: body.plan_type || body.plan_type || "Workout Plan", // fallback
+      difficulty: body.difficulty || "Beginner",
+      Description: body.Description || undefined,
+      goals: ensureArrayGoals(body.goals),
+      monday_plan: body.monday_plan || undefined,
+      tuesday_plan: body.tuesday_plan || undefined,
+      wednesday_plan: body.wednesday_plan || undefined,
+      thursday_plan: body.thursday_plan || undefined,
+      friday_plan: body.friday_plan || undefined,
+      saturday_plan: body.saturday_plan || undefined,
+      sunday_plan: body.sunday_plan || undefined,
+    };
 
-      // Audit info
-      planData.created_by = req.user?.id ?? null;
-      planData.created_by_name = req.user?.username ?? null;
-      planData.created_by_email = req.user?.email ?? null;
+    const planData = await parseZodSchema(createPlanSchema, normalized);
 
-      // If file uploaded by multer (field 'image'), attach URL
-      if (req.file) {
-        planData.pdf_url = buildFileUrl(req, req.file);
-      }
+    planData.created_by = req.user?.id ?? null;
+    planData.created_by_name = req.user?.username ?? null;
+    planData.created_by_email = req.user?.email ?? null;
 
-      const plan = await planService.create(planData, req.user);
-      return res.sendSuccess(plan, "Plan created successfully");
-    } catch (error) {
-      // If parseZodSchema returns structured validation errors, surface them
-      if (error && error.errors) {
-        // Zod-ish errors
-        return res.sendError("Validation failed", { details: error.errors });
-      }
-      console.error("Error in planController.create:", error);
-      return res.sendError(error.message || "Failed to create plan");
-    }
-  },
+    const plan = await planService.create(planData, req.user);
+    return res.sendSuccess(plan, "Plan created successfully");
+  } catch (error) {
+    console.error("❌ Error:", error);
+    return res.sendError(error.message || "Failed to create plan");
+  }
+},
+
 
   /**
    * Get all plans (supports filters/pagination via query)

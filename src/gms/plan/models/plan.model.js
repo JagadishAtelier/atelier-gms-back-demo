@@ -19,10 +19,6 @@ const Plan = sequelize.define("Plan", {
         type: DataTypes.ENUM('Beginner', 'Intermediate', 'Advanced'),
         allowNull: false,
     },
-    duration: {
-        type: DataTypes.STRING(100),
-        allowNull: false,
-    },
     goals: {
         type: DataTypes.JSON,
         allowNull: true,
@@ -31,9 +27,34 @@ const Plan = sequelize.define("Plan", {
         type: DataTypes.TEXT,
         allowNull: true,
     },
-    pdf_url: {
-        type: DataTypes.STRING,
+    monday_plan: {
+        type: DataTypes.TEXT,
         allowNull: true,
+    },
+    tuesday_plan: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+
+    wednesday_plan: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    thursday_plan: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    friday_plan: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    saturday_plan: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    sunday_plan: {
+        type: DataTypes.TEXT,
+        allowNull: true,  
     },
     is_active: {
         type: DataTypes.BOOLEAN,

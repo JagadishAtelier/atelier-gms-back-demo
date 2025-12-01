@@ -122,6 +122,17 @@ const assignPlanController = {
       return res.sendError(error.message || "Failed to restore assign plan");
     }
   },
+
+  async getAssignedPlansByMemberId(req, res) {
+    try {
+      const userEmail  = req.user.email;
+      const result = await assignPlanService.getassignPlanByMemberId(userEmail);
+      return res.sendSuccess(result, "Assigned plans fetched successfully");
+    } catch (error) {
+      console.error("Error in assignPlanController.getAssignedPlansByMemberId:", error);
+      return res.sendError(error.message || "Failed to fetch assigned plans");
+    }
+  },
 };
 
 export default assignPlanController;

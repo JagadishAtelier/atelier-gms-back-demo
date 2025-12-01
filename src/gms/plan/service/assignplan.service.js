@@ -6,11 +6,6 @@ import Member from "../../member/models/member.model.js";
 import "../models/index.js"; 
 
 const assignPlanService = {
-  /**
-   * ✅ Create Assign Plan
-   */
-  
-
 async create(data, user) {
   try {
     const requiredFields = ["plan_id", "member_id", "assigned_date"];
@@ -196,6 +191,38 @@ async create(data, user) {
     });
 
     return { message: "Assigned plan restored successfully" };
+  },
+
+  async getassignPlanByMemberId(userEmail) {
+    const member = await Member.findOne({
+      where: {
+        email: userEmail,
+      }
+    })
+
+
+    if (!member) throw new Error("Member not found");
+
+  const memberId = member.id;
+
+    const assignPlan = await AssignPlan.findAll({
+      where: {
+        member_id: memberId,
+      },
+      include: [
+        {
+          model: Plan,
+          as: "plan",
+          required: false,
+        },
+        {
+          model: Member,
+          as: "member",
+          required: false,
+        },
+      ],
+    });
+    return assignPlan;
   },
 };
 

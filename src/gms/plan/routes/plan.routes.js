@@ -58,7 +58,6 @@ const optionalUpload = (req, res, next) => {
 router.post(
   "/plan",
   verifyToken(["Admin", "Super Admin"]),
-  optionalUpload,          // <-- FIXED ✔
   validate(createPlanSchema),
   planController.create
 );
@@ -79,7 +78,6 @@ router.get("/plan/:id", verifyToken(), planController.getById);
 router.put(
   "/plan/:id",
   verifyToken(["Admin", "Super Admin"]),
-  optionalUpload,          // <-- FIXED ✔
   validate(updatePlanSchema),
   planController.update
 );

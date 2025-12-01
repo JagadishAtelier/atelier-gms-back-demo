@@ -30,6 +30,8 @@ router.get("/assignplan", verifyToken(), assignPlanController.getAll);
  */
 router.get("/assignplan/:id", verifyToken(), assignPlanController.getById);
 
+router.get("/assignplanbymemberid", verifyToken(), assignPlanController.getAssignedPlansByMemberId );
+
 /**
  * ✅ Update assigned plan
  */

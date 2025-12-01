@@ -8,7 +8,7 @@ const planService = {
    */
   async create(data, user) {
     try {
-      const requiredFields = ["title", "plan_type", "difficulty", "duration"];
+      const requiredFields = ["title", "plan_type", "difficulty"];
       for (const field of requiredFields) {
         if (!data[field]) throw new Error(`${field} is required`);
       }

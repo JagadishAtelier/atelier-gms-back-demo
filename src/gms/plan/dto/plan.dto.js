@@ -22,17 +22,17 @@ export const createPlanSchema = z.object({
 
   difficulty: difficultyEnum,
 
-  duration: z
-    .string({ required_error: "Duration is required" })
-    .min(2, "Duration must be at least 2 characters")
-    .max(100, "Duration cannot exceed 100 characters"),
-
   goals: z.array(z.string()).optional(),
 
   Description: z.string().optional(),
 
-  // NEW ✔ PDF URL allowed after upload
-  pdf_url: z.string().url().optional(),
+  monday_plan: z.string().optional(),
+  tuesday_plan: z.string().optional(),
+  wednesday_plan: z.string().optional(),
+  thursday_plan: z.string().optional(),
+  friday_plan: z.string().optional(),
+  saturday_plan: z.string().optional(),
+  sunday_plan: z.string().optional(),
 
   is_active: z.boolean().optional().default(true),
 
@@ -51,14 +51,23 @@ export const updatePlanSchema = z.object({
 
   difficulty: difficultyEnum.optional(),
 
-  duration: z.string().min(2).max(100).optional(),
-
   goals: z.array(z.string()).optional(),
 
   Description: z.string().optional(),
 
-  // NEW ✔ PDF URL allowed for replacing PDF
-  pdf_url: z.string().url().optional(),
+  monday_plan: z.string().optional(),
+
+  tuesday_plan: z.string().optional(),
+
+  wednesday_plan: z.string().optional(),
+
+  thursday_plan: z.string().optional(),
+
+  friday_plan: z.string().optional(),
+
+  saturday_plan: z.string().optional(),
+  
+  sunday_plan: z.string().optional(),
 
   is_active: z.boolean().optional(),
 
