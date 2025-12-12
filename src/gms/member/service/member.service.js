@@ -5,6 +5,8 @@ import User from "../../../user/models/user.model.js";
 import bcrypt from "bcrypt";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
+import XLSX from "xlsx";
+import { parse } from "csv-parse/sync";
 
 dotenv.config();
 
@@ -109,6 +111,123 @@ const memberService = {
       throw error;
     }
   },
+
+  async bulkUpload(fileBuffer, user, sendEmail = true) {
+  try {
+    if (!fileBuffer) throw new Error("File is required");
+
+    let rows = [];
+
+    // Detect file type by buffer signature
+    const isExcel =
+      fileBuffer[0] === 0x50 &&
+      fileBuffer[1] === 0x4b &&
+      fileBuffer[2] === 0x03 &&
+      fileBuffer[3] === 0x04;
+
+    if (isExcel) {
+      // Read Excel File
+      const workbook = XLSX.read(fileBuffer, { type: "buffer" });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      rows = XLSX.utils.sheet_to_json(sheet);
+    } else {
+      // Read CSV File
+      rows = parse(fileBuffer.toString(), {
+        columns: true,
+        skip_empty_lines: true,
+      });
+    }
+
+    const results = {
+      success: [],
+      failed: [],
+    };
+
+    for (const [index, row] of rows.entries()) {
+      try {
+        // Validate fields
+        const required = ["name", "email", "phone"];
+        for (const field of required) {
+          if (!row[field]) throw new Error(`Missing field: ${field}`);
+        }
+
+        // Check if email already exists
+        const exist = await Member.findOne({ where: { email: row.email } });
+        if (exist) throw new Error("Email already exists");
+
+        // Create member
+        const member = await Member.create({
+          id: uuidv4(),
+          name: row.name,
+          email: row.email,
+          phone: row.phone,
+          gender: row.gender || null,
+          workout_batch: row.workout_batch || null,
+          created_by: user?.id || null,
+          created_by_name: user?.username || null,
+          created_by_email: user?.email || null,
+        });
+
+        // Create user login
+        const plainPassword = String(row.phone);
+        const hashedPassword = await bcrypt.hash(plainPassword, 10);
+
+        await User.create({
+          id: uuidv4(),
+          role: "member",
+          username: row.name,
+          email: row.email,
+          phone: row.phone,
+          password: hashedPassword,
+          created_by: user?.id || null,
+        });
+
+        // Send welcome email (optional)
+        if (sendEmail) {
+          const loginUrl = "https://gym-management-system.theateliercreation.com/";
+          const html = `
+            <h2>Welcome to Flex Culture!</h2>
+            <p>Hello <b>${row.name}</b>,</p>
+            <p>Your account has been created. Here are your credentials:</p>
+            <ul>
+              <li>Email: ${row.email}</li>
+              <li>Phone: ${row.phone}</li>
+              <li>Password: ${plainPassword}</li>
+            </ul>
+            <p>Login here: ${loginUrl}</p>
+          `;
+
+          await transporter.sendMail({
+            from: `"Flex Culture" <${VERIFIED_SENDER}>`,
+            to: row.email,
+            subject: "Welcome — Your Login Details",
+            html,
+          });
+        }
+
+        // Push success
+        results.success.push({
+          row: index + 1,
+          email: row.email,
+          status: "Created",
+        });
+
+      } catch (err) {
+        // Push failed
+        results.failed.push({
+          row: index + 1,
+          data: row,
+          error: err.message,
+        });
+      }
+    }
+
+    return results;
+  } catch (error) {
+    console.error("❌ Bulk Upload Error:", error.message);
+    throw error;
+  }
+},
 
   /**
    * ✅ Get all members with pagination, search, and filters

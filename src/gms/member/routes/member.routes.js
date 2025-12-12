@@ -6,6 +6,8 @@ import {
   createMemberSchema,
   updateMemberSchema,
 } from "../dto/member.dto.js";
+import multer from "multer";
+const upload = multer();
 
 const router = express.Router();
 
@@ -19,6 +21,9 @@ router.post(
   validate(createMemberSchema),
   memberController.create
 );
+
+router.post("/member-bulk-upload", verifyToken(["Admin", "Super Admin"]),
+ upload.single("file"), memberController.bulkUpload);
 
 /**
  * ✅ Get All Members (with filters, pagination)

@@ -25,6 +25,7 @@ const memberController = {
     }
   },
 
+
   /**
    * ✅ Get All Members (with filters, pagination)
    */
@@ -34,6 +35,24 @@ const memberController = {
       return res.sendSuccess(members, "Members fetched successfully");
     } catch (error) {
       return res.sendError(error.message || "Failed to fetch members");
+    }
+  },
+
+  async bulkUpload(req, res) {
+    try {
+      if (!req.file) {
+        return res.sendError("Please upload a file");
+      }
+
+      const result = await memberService.bulkUpload(
+        req.file.buffer,
+        req.user,
+        true // send emails
+      );
+
+      return res.sendSuccess(result, "Bulk upload completed");
+    } catch (error) {
+      return res.sendError(error.message || "Bulk upload failed");
     }
   },
 
