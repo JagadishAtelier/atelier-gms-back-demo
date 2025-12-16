@@ -1,76 +1,64 @@
-// src/app.js
-import express from 'express';
-import cors from 'cors';
-import morgan from 'morgan';
-import helmet from 'helmet';
-import responseHelper from './middleware/responseHelper.js';
-import userRoutes from './user/routes/index.js';
-import gmsRoutes from './gms/index.js'; 
-import path from "path";
+import express from "express";
+import cors from "cors";
+import morgan from "morgan";
+import helmet from "helmet";
+import responseHelper from "./middleware/responseHelper.js";
+import userRoutes from "./user/routes/index.js";
+import gmsRoutes from "./gms/index.js";
 
 const app = express();
 
-// --- Middlewares ---
-app.use(express.urlencoded({ extended: true })); 
+// Body parsing
+app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// CORS configuration
-const allowedOrigin = '*'; 
-app.use(cors({
-  origin: allowedOrigin,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  exposedHeaders: ["Content-Disposition"],
-  credentials: true, 
-}));
+// CORS
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    exposedHeaders: ["Content-Disposition"],
+    credentials: false,
+  })
+);
 
+// Logging
+app.use(morgan("dev"));
 
-// Logging & security
-app.use(morgan('dev'));
-app.use(helmet());
+// 🔥 Helmet FIX
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false,
+  })
+);
 
-// Custom response helper
+// Response helper
 app.use(responseHelper);
 
-// PDF inline headers
-app.use((req, res, next) => {
-  if (req.path.endsWith(".pdf")) {
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", "inline");
-  }
-  next();
-});
-
+// Serve uploads (cross-origin safe)
 app.use(
   "/uploads",
   express.static("uploads", {
     setHeaders: (res) => {
-      res.set("Access-Control-Allow-Origin", "*");
-      res.set("Cross-Origin-Resource-Policy", "cross-origin");
-    },
-  })
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    },
+  })
 );
 
-// --- Routes ---
-app.get('/', (req, res) => {
+// Test routes
+app.get("/", (req, res) => {
   res.status(200).send("Hello World!!");
 });
 
-app.get('/api/data', (req, res) => {
-  res.sendSuccess({ value: 42 }, 'Data fetched successfully');
-});
+// API routes
+app.use("/api/v1", userRoutes);
+app.use("/api/v1", gmsRoutes);
 
-app.get('/api/error', (req, res) => {
-  res.sendError('Something went wrong', 422, [{ field: 'email', message: 'Invalid' }]);
-});
-
-// API versioned routes
-app.use('/api/v1/', userRoutes);
-app.use('/api/v1/', gmsRoutes);
-
-// 404 fallback
+// 404
 app.use((req, res) => {
-  return res.sendError('Route not found', 404);
+  res.sendError("Route not found", 404);
 });
 
 export default app;
