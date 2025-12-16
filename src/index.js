@@ -41,8 +41,15 @@ app.use((req, res, next) => {
   next();
 });
 
-// Static uploads
-app.use('/uploads', express.static('uploads'));
+app.use(
+  "/uploads",
+  express.static("uploads", {
+    setHeaders: (res) => {
+      res.set("Access-Control-Allow-Origin", "*");
+      res.set("Cross-Origin-Resource-Policy", "cross-origin");
+    },
+  })
+);
 
 // --- Routes ---
 app.get('/', (req, res) => {
