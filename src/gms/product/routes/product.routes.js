@@ -44,7 +44,6 @@ router.post(
  */
 router.get(
   "/product",
-  verifyToken(),
   productController.getAll
 );
 
@@ -54,7 +53,6 @@ router.get(
  */
 router.get(
   "/product/:id",
-  verifyToken(),
   productController.getById
 );
 
