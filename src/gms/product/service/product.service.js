@@ -9,30 +9,33 @@ const productService = {
    * ✅ Create product
    */
   async create(data, user) {
-    try {
-      const requiredFields = ["title", "price"];
-      for (const field of requiredFields) {
-        if (!data[field]) throw new Error(`${field} is required`);
-      }
+  try {
+    if (!data.title) throw new Error("title is required");
+    if (!data.price) throw new Error("price is required");
 
-      const product = await Product.create({
-        id: uuidv4(),
-        product_image_url: data.product_image_url || null,
-        title: data.title,
-        price: data.price,
-        description: data.description || null,
-        is_active: true,
-        created_by: user?.id || null,
-        created_by_name: user?.username || null,
-        created_by_email: user?.email || null,
-      });
+    const product = await Product.create({
+      id: uuidv4(),
+      title: data.title,
+      price: data.price,
+      description: data.description ?? null,
 
-      return product;
-    } catch (error) {
-      console.error("❌ Error creating product:", error.message);
-      throw error;
-    }
-  },
+      // ✅ Store CDN URL ONLY
+      product_image_url: data.product_image_url ?? null,
+
+      is_active: true,
+      created_by: user?.id ?? null,
+      created_by_name: user?.username ?? null,
+      created_by_email: user?.email ?? null,
+    });
+
+    return product;
+  } catch (error) {
+    console.error("❌ Error creating product:", error.message);
+    throw error;
+  }
+},
+
+
 
   /**
    * ✅ Bulk upload products (Excel / CSV)
@@ -108,7 +111,7 @@ const productService = {
       page = 1,
       limit = 10,
       search = "",
-      is_active,
+      is_active= true,
       min_price,
       max_price,
       sort_by = "createdAt",

@@ -16,43 +16,27 @@ const productController = {
    * "/uploads/products/<uuid>.<ext>" in DB.
    */
   async create(req, res) {
-    try {
-      // parse fields with zod (req.body contains text fields from multipart/form-data)
-      const productData = await parseZodSchema(createProductSchema, req.body);
+  try {
+    const productData = await parseZodSchema(createProductSchema, req.body);
 
-      // If file present, save it to disk and set product_image_url to relative path
-      if (req.file && req.file.buffer) {
-        const uploadsDir = path.join(process.cwd(), "uploads", "products");
-        // ensure dir exists
-        fs.mkdirSync(uploadsDir, { recursive: true });
-
-        // preserve original extension if available
-        const ext = path.extname(req.file.originalname) || ".jpg";
-        const filename = `${uuidv4()}${ext}`;
-        const fullPath = path.join(uploadsDir, filename);
-
-        // write file buffer
-        await fs.promises.writeFile(fullPath, req.file.buffer);
-
-        // store only the relative web path in DB (frontend will fetch from API_BASE + product_image_url)
-        productData.product_image_url = `/uploads/products/${filename}`;
-      }
-
-      // Add audit info
-      productData.created_by = req.user?.id;
-      productData.created_by_name = req.user?.username;
-      productData.created_by_email = req.user?.email;
-
-      const product = await productService.create(productData, req.user);
-      return res.sendSuccess(product, "Product created successfully");
-    } catch (error) {
-      return res.sendError(error.message || "Failed to create product");
+    // If file was uploaded to Spaces, we set product_image_url to CDN URL
+    if (req.file && req.file.location) {
+      productData.product_image_url = req.file.location;
     }
-  },
 
-  /**
-   * ✅ Get All Products (with filters, pagination)
-   */
+    // audit
+    productData.created_by = req.user?.id;
+    productData.created_by_name = req.user?.username;
+    productData.created_by_email = req.user?.email;
+
+    const product = await productService.create(productData, req.user);
+    return res.sendSuccess(product, "Product created successfully");
+  } catch (error) {
+    return res.sendError(error.message || "Failed to create product");
+  }
+},
+
+
   async getAll(req, res) {
     try {
       const products = await productService.getAll(req.query);

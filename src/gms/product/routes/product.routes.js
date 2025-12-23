@@ -6,10 +6,9 @@ import {
   createProductSchema,
   updateProductSchema,
 } from "../dto/product.dto.js";
-import multer from "multer";
 
-// use memory storage (controller writes file to directory)
-const upload = multer();
+// ✅ DigitalOcean Spaces upload middleware
+import uploadToSpacesSingle from "../../../middleware/uploadProductImage.js";
 
 const router = express.Router();
 
@@ -22,25 +21,24 @@ const router = express.Router();
 router.post(
   "/product",
   verifyToken(["Admin", "Super Admin"]),
-  upload.single("image"),          // 🔹 image upload
-  validate(createProductSchema),   // 🔹 validate body fields
+  ...uploadToSpacesSingle("image"),     // <-- note spread operator to use the array
+  validate(createProductSchema),
   productController.create
 );
 
 /**
  * ✅ Bulk Upload Products
  * Access: Admin, Super Admin
+ * (CSV / Excel – no image upload here)
  */
 router.post(
   "/product-bulk-upload",
   verifyToken(["Admin", "Super Admin"]),
-  upload.single("file"),
   productController.bulkUpload
 );
 
 /**
- * ✅ Get All Products (with filters, pagination)
- * Access: All authenticated users
+ * ✅ Get All Products
  */
 router.get(
   "/product",
@@ -49,7 +47,6 @@ router.get(
 
 /**
  * ✅ Get Product by ID
- * Access: All authenticated users
  */
 router.get(
   "/product/:id",
@@ -65,14 +62,13 @@ router.get(
 router.put(
   "/product/:id",
   verifyToken(["Admin", "Super Admin"]),
-  upload.single("image"),          // 🔹 image upload
+  ...uploadToSpacesSingle("image"),  // ✅ Upload to DO Spaces
   validate(updateProductSchema),
   productController.update
 );
 
 /**
  * ✅ Soft Delete Product
- * Access: Admin, Super Admin
  */
 router.delete(
   "/product/:id",
@@ -82,7 +78,6 @@ router.delete(
 
 /**
  * ✅ Restore Deleted Product
- * Access: Admin, Super Admin
  */
 router.patch(
   "/product/:id/restore",
