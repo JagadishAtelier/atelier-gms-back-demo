@@ -73,7 +73,7 @@ const memberService = {
 
       // 3️⃣ Send welcome email with credentials
       try {
-        const clientLoginUrl = "https://gym-management-system.theateliercreation.com/";
+        const clientLoginUrl = "https://gmsflexculture.ateliertechnologysolutions.com/";
 
         const html = `
 <div style="max-width:600px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;background:#0d0d0d;border:1px solid #1f1f1f;border-radius:10px;overflow:hidden">
@@ -231,7 +231,7 @@ const memberService = {
 
           // Send welcome email (optional)
           if (sendEmail) {
-            const loginUrl = "https://gym-management-system.theateliercreation.com/";
+            const loginUrl = "https://gmsflexculture.ateliertechnologysolutions.com/";
             const html = `
 <div style="max-width:600px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;background:#0d0d0d;border:1px solid #1f1f1f;border-radius:10px;overflow:hidden">
 

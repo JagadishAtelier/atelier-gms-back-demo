@@ -114,7 +114,7 @@ const remainderMailService = {
 
     <!-- CTA -->
     <div style="margin-top:24px;text-align:center">
-      <a href="https://gym-management-system.theateliercreation.com/"
+      <a href="https://gmsflexculture.ateliertechnologysolutions.com/"
          style="display:inline-block;padding:14px 26px;background:#e10600;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:bold;letter-spacing:0.5px">
         RENEW NOW
       </a>
@@ -325,7 +325,7 @@ const remainderMailService = {
 
     <!-- CTA -->
     <div style="margin-top:24px;text-align:center">
-      <a href="https://gym-management-system.theateliercreation.com/"
+      <a href="https://gmsflexculture.ateliertechnologysolutions.com/"
          style="display:inline-block;padding:14px 26px;background:#e10600;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:bold;letter-spacing:0.5px;margin-right:10px">
         RENEW MEMBERSHIP
       </a>
