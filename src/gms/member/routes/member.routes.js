@@ -43,7 +43,7 @@ router.get("/member/:id", verifyToken(), memberController.getById);
  */
 router.put(
   "/member/:id",
-  verifyToken(["Admin", "Super Admin"]),
+  verifyToken(),
   validate(updateMemberSchema),
   memberController.update
 );
