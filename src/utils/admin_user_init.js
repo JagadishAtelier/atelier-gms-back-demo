@@ -12,11 +12,11 @@ export const initializeSuperAdmin = async () => {
     }
 
     const defaultSuperAdmin = {
-      username: 'Admin',
-      email: 'admin@gmail.com',
-      password: await hashPassword('Admin@123'), 
-      phone: '9999999999',
-      role: 'Super Admin',                      
+      username: 'Flex Culture',
+      email: 'flexculture001@gmail.com',
+      password: await hashPassword('Flexculture@123'), 
+      phone: '7904202265',
+      role: 'Super Admin',                    
       is_active: true,
     };
 

@@ -12,8 +12,8 @@
 
 import { Sequelize } from "sequelize";
 
-const sequelize = new Sequelize("mysql://u265115582_gms:Parthiban2025@82.112.229.246/u265115582_gms");
-
+const sequelize = new Sequelize("mysql://u265115582_flexculture:Flexculture1@82.112.229.246/u265115582_flexculture");
+// const sequelize = new Sequelize("mysql://u265115582_gms:Parthiban2025@82.112.229.246/u265115582_gms");
 // const sequelize = new Sequelize("mysql://root:root@localhost/gms");
 
 sequelize
