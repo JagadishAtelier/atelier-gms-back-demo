@@ -32,7 +32,7 @@ transporter.verify((err, success) => {
 });
 
 // VERIFIED sender email
-const VERIFIED_SENDER = process.env.VERIFIED_SENDER || "parthiban.atelier@gmail.com";
+const VERIFIED_SENDER = process.env.VERIFIED_SENDER || "flexculture001@gmail.com";
 
 const memberService = {
   /**
