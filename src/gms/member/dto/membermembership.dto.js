@@ -15,6 +15,12 @@ export const createMemberMembershipSchema = z.object({
     .string({ required_error: "Member ID is required" })
     .uuid("Invalid Member ID format"),
 
+  membership_name: z
+    .string({ required_error: "Membership name is required" })
+    .min(3, "Membership name must be at least 3 characters")
+    .max(100, "Membership name cannot exceed 100 characters")
+    .optional(),
+
   membership_id: z
     .string({ required_error: "Membership ID is required" })
     .uuid("Invalid Membership ID format"),
@@ -28,6 +34,21 @@ export const createMemberMembershipSchema = z.object({
     (val) => (val ? new Date(val) : undefined),
     z.date({ required_error: "End date is required" }).optional()
   ),
+
+  payment_type: z.enum(["cash", "card", "online", "upi"], {
+    required_error: "Payment type must be one of: cash, card, online, upi",
+  }),
+
+  amount_paid: z.number({
+    required_error: "Amount paid is required",
+    invalid_type_error: "Amount paid must be a number",
+  })
+  .optional(),
+
+  pending_amount: z.number({
+    invalid_type_error: "Pending amount must be a number",
+  })
+  .optional(),
 
   payment_status: paymentStatusEnum.default("paid"),
   status: membershipStatusEnum.default("active"),
@@ -49,9 +70,32 @@ export const updateMemberMembershipSchema = z.object({
     .preprocess((val) => (val ? new Date(val) : undefined), z.date().optional())
     .optional(),
 
+  payment_type: z
+    .enum(["cash", "card", "online", "upi"])
+    .optional(),
+  
+  amount_paid: z
+    .number({
+      invalid_type_error: "Amount paid must be a number",
+    })
+    .optional(),
+
+  pending_amount: z
+    .number({
+      invalid_type_error: "Pending amount must be a number",
+    })
+    .optional(),
+
+  membership_name: z
+    .string({ required_error: "Membership name is required" })
+    .min(3, "Membership name must be at least 3 characters")
+    .max(100, "Membership name cannot exceed 100 characters")
+    .optional(),
+
   payment_status: paymentStatusEnum.optional(),
   status: membershipStatusEnum.optional(),
   is_active: z.boolean().optional(),
+
 
   // Audit fields
   updated_by: z.string().uuid().optional(),

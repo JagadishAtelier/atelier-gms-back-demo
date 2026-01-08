@@ -96,35 +96,87 @@ const membermembershipController = {
   },
 
   /**
- * ✅ Get Active Memberships by Member ID
- */
-async getActiveByMemberId(req, res) {
-  try {
-    const { member_id } = req.params;
-    if (!member_id) return res.sendError("member_id is required");
+   * ✅ Get Active Memberships by Member ID
+   */
+  async getActiveByMemberId(req, res) {
+    try {
+      const { member_id } = req.params;
+      if (!member_id) return res.sendError("member_id is required");
 
-    const memberships = await membermembershipService.getActiveMembershipsByMemberId(member_id);
-    return res.sendSuccess(memberships, "Active memberships fetched successfully");
-  } catch (error) {
-    return res.sendError(error.message || "Failed to fetch active memberships");
-  }
-},
+      const memberships =
+        await membermembershipService.getActiveMembershipsByMemberId(member_id);
 
-/**
- * ✅ Get All Memberships by Member ID (active + expired)
- */
-async getAllByMemberId(req, res) {
-  try {
-    const { member_id } = req.params;
-    if (!member_id) return res.sendError("member_id is required");
+      return res.sendSuccess(memberships, "Active memberships fetched successfully");
+    } catch (error) {
+      return res.sendError(error.message || "Failed to fetch active memberships");
+    }
+  },
 
-    const memberships = await membermembershipService.getallMenbershipsByMemberId(member_id);
-    return res.sendSuccess(memberships, "All memberships fetched successfully");
-  } catch (error) {
-    return res.sendError(error.message || "Failed to fetch memberships by member");
-  }
-},
+  /**
+   * ✅ Get All Memberships by Member ID (active + expired)
+   */
+  async getAllByMemberId(req, res) {
+    try {
+      const { member_id } = req.params;
+      if (!member_id) return res.sendError("member_id is required");
 
+      const memberships =
+        await membermembershipService.getallMenbershipsByMemberId(member_id);
+
+      return res.sendSuccess(memberships, "All memberships fetched successfully");
+    } catch (error) {
+      return res.sendError(error.message || "Failed to fetch memberships by member");
+    }
+  },
+
+  /**
+   * ✅ Get Pending Amount by Member ID
+   * Query param:
+   *   includeInactive=true (optional)
+   */
+  async getPendingAmountByMemberId(req, res) {
+    try {
+      const { member_id } = req.params;
+      if (!member_id) return res.sendError("member_id is required");
+
+      const includeInactive =
+        req.query.includeInactive === "true" ? true : false;
+
+      const result =
+        await membermembershipService.getPendingAmountByMemberId(
+          member_id,
+          includeInactive
+        );
+
+      return res.sendSuccess(
+        result,
+        "Member pending amount fetched successfully"
+      );
+    } catch (error) {
+      return res.sendError(
+        error.message || "Failed to fetch member pending amount"
+      );
+    }
+  },
+
+  async getNextPaymentDateByMemberId(req, res) {
+    try {
+      const { member_id } = req.params;
+      if (!member_id) return res.sendError("member_id is required");
+
+      const result =
+        await membermembershipService.getNextPaymentDateByMemberId(member_id);
+
+      return res.sendSuccess(
+        result,
+        "Next payment date fetched successfully"
+      );
+    } catch (error) {
+      return res.sendError(
+        error.message || "Failed to fetch next payment date"
+      );
+    }
+  },
 };
 
 export default membermembershipController;

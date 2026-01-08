@@ -8,6 +8,11 @@ const Member = sequelize.define("Member", {
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
     },
+    member_no:{
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      unique: true,
+    },
     name: {
         type: DataTypes.STRING(100),
         allowNull: false,
@@ -15,11 +20,15 @@ const Member = sequelize.define("Member", {
     email: {
         type: DataTypes.STRING(60),
         unique: true,
-        allowNull: false,
+        allowNull: true,
     },
     phone: {
         type: DataTypes.STRING(15),
         unique: true,
+        allowNull: true,
+    },
+    address: {
+        type: DataTypes.STRING(255),
         allowNull: true,
     },
     image_url: {
@@ -53,6 +62,11 @@ const Member = sequelize.define("Member", {
             model: User,
             key: 'id',
         },
+    },
+    payment_status: {
+        type: DataTypes.ENUM('paid', 'unpaid','pending', 'not started'),
+        allowNull: true,
+        defaultValue: 'not started',
     },
     is_active: {
         type: DataTypes.BOOLEAN,

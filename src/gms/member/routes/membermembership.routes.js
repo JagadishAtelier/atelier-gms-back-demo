@@ -21,8 +21,7 @@ router.post(
 );
 
 /**
- * ✅ Get All Member-Memberships (with filters, pagination)
- * Access: All authenticated users
+ * ✅ Get All Member-Memberships
  */
 router.get(
   "/membermembership",
@@ -32,7 +31,6 @@ router.get(
 
 /**
  * ✅ Get Member-Membership by ID
- * Access: All authenticated users
  */
 router.get(
   "/membermembership/:id",
@@ -42,7 +40,6 @@ router.get(
 
 /**
  * ✅ Update Member-Membership
- * Access: Admin, Super Admin
  */
 router.put(
   "/membermembership/:id",
@@ -53,7 +50,6 @@ router.put(
 
 /**
  * ✅ Soft Delete Member-Membership
- * Access: Admin, Super Admin
  */
 router.delete(
   "/membermembership/:id",
@@ -63,7 +59,6 @@ router.delete(
 
 /**
  * ✅ Restore Deleted Member-Membership
- * Access: Admin, Super Admin
  */
 router.patch(
   "/membermembership/:id/restore",
@@ -71,16 +66,40 @@ router.patch(
   membermembershipController.restore
 );
 
+/**
+ * ✅ Active memberships
+ */
 router.get(
   "/membermembership/member/:member_id/active",
   verifyToken(),
   membermembershipController.getActiveByMemberId
 );
 
+/**
+ * ✅ All memberships (active + expired)
+ */
 router.get(
   "/membermembership/member/:member_id/all",
   verifyToken(),
   membermembershipController.getAllByMemberId
+);
+
+/**
+ * ✅ Pending amount
+ */
+router.get(
+  "/membermembership/member/:member_id/pending",
+  verifyToken(),
+  membermembershipController.getPendingAmountByMemberId
+);
+
+/**
+ * ✅ Next payment date
+ */
+router.get(
+  "/membermembership/member/:member_id/next-payment",
+  verifyToken(),
+  membermembershipController.getNextPaymentDateByMemberId
 );
 
 export default router;
