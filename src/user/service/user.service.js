@@ -160,6 +160,7 @@ const userService = {
         email: user.email,
         username: user.username,
         role: user.role,
+        phone: user.phone,
       },
       SECRET_KEY,
       { expiresIn: "7d" }

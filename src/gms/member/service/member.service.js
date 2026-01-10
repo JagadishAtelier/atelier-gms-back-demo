@@ -706,14 +706,17 @@ const memberService = {
     return { message: "Member deactivated successfully" };
   },
 
-  async getMembersbyuserEmail(email) {
-    const members = await Member.findOne({
-      where: {
-        email: email,
-      },
-    });
-    return members;
-  },
+  async getMembersbyuserEmail(email, phone) {
+  // return early if neither provided
+  if (!email && !phone) return null;
+
+  const where = email
+    ? { email }
+    : { phone };
+
+  const member = await Member.findOne({ where });
+  return member;
+},
 
   /**
    * ✅ Restore a deactivated member

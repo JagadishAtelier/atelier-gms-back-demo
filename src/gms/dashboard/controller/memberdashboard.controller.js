@@ -4,15 +4,10 @@ const memberDashboardController = {
   async getMemberDashboard(req, res) {
     try {
       const userEmail = req.user?.email || null;
+      const userPhone = req.user?.phone || null;
 
-      if (!userEmail) {
-        return res.status(401).json({
-          status: "error",
-          message: "Unauthorized - No email found in token",
-        });
-      }
 
-      const dashboard = await memberDashboardService.getDashboardByMemberId(userEmail);
+      const dashboard = await memberDashboardService.getDashboardByMemberId(userEmail, userPhone);
       return res.json(dashboard);
 
     } catch (error) {

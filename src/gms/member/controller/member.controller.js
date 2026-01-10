@@ -102,14 +102,17 @@ const memberController = {
   },
 
   async getMembersbyEmail(req, res) {
-    try {
-      const email = req.user.email;
-      const members = await memberService.getMembersbyuserEmail(email);
-      return res.sendSuccess(members, "Members fetched successfully");
-    } catch (error) {
-      return res.sendError(error.message || "Failed to fetch members");
-    }
-  },
+  try {
+    const email = req.user?.email || null;
+    const phone = req.user?.phone || null;
+    console.log("Fetching members for email:", req.user);
+    const members = await memberService.getMembersbyuserEmail(email, phone);
+
+    return res.sendSuccess(members, "Members fetched successfully");
+  } catch (error) {
+    return res.sendError(error.message || "Failed to fetch members");
+  }
+},
 
   /**
    * ✅ Restore Soft Deleted Member
