@@ -638,6 +638,7 @@ const memberService = {
         { name: { [Op.like]: `%${search}%` } },
         { email: { [Op.like]: `%${search}%` } },
         { phone: { [Op.like]: `%${search}%` } },
+        { member_no: { [Op.like]: `%${search}%` } },
       ];
     }
 
