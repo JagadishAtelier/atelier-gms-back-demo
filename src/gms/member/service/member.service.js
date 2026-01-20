@@ -8,6 +8,7 @@ import dotenv from "dotenv";
 import XLSX from "xlsx";
 import { parse } from "csv-parse/sync";
 import Membermembership from '../models/membermembership.model.js';
+import Membership from "../../membership/models/membership.model.js";
 import { sequelize } from "../../../db/index.js";
 
 
@@ -651,6 +652,87 @@ const memberService = {
       order: [[sort_by, sort_order]],
     });
 
+    // 🚀 OPTIMIZATION: Bulk fetch pending amounts & next payment dates 🚀
+    const memberIds = rows.map((m) => m.id);
+
+    if (memberIds.length > 0) {
+      try {
+        const allMemberships = await Membermembership.findAll({
+          where: { member_id: { [Op.in]: memberIds } },
+          include: [{ model: Membership, attributes: ["id", "name", "price"] }],
+        });
+
+        // Group by member_id
+        const membershipMap = {};
+        for (const mm of allMemberships) {
+          if (!membershipMap[mm.member_id]) membershipMap[mm.member_id] = [];
+          membershipMap[mm.member_id].push(mm);
+        }
+
+        // Attach computed fields
+        for (const member of rows) {
+          const mms = membershipMap[member.id] || [];
+
+          // 1️⃣ Calculate Pending Amount
+          let totalPending = 0;
+          for (const r of mms) {
+            // "getPendingAmountByMemberId" default behavior: only is_active=true
+            if (r.is_active) {
+              let pending = 0;
+              if (r.pending_amount !== null && r.pending_amount !== undefined) {
+                pending = Number(r.pending_amount);
+              } else {
+                const price = r.Membership?.price ? Number(r.Membership.price) : 0;
+                const paid = r.amount_paid ? Number(r.amount_paid) : 0;
+                pending = Math.max(0, price - paid);
+              }
+              totalPending += pending;
+            }
+          }
+
+          // 2️⃣ Calculate Next Payment Date
+          // Logic:
+          // - active memberships (end_date >= today)
+          // - sort by end_date desc
+          // - take first -> end_date + 1 day
+          // - fallback: latest membership -> end_date + 1 day
+
+          mms.sort((a, b) => new Date(b.end_date) - new Date(a.end_date));
+
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          const activeMm = mms.filter(r => r.is_active && new Date(r.end_date) >= today);
+          let selected = null;
+
+          if (activeMm.length > 0) {
+            selected = activeMm[0];
+          } else if (mms.length > 0) {
+            selected = mms[0];
+          }
+
+          let nextPaymentDate = null;
+          if (selected && selected.end_date) {
+            const d = new Date(selected.end_date);
+            d.setDate(d.getDate() + 1);
+            nextPaymentDate = d.toISOString();
+          }
+
+          // Attach (using setDataValue since these are Sequelize instances)
+          if (member.setDataValue) {
+            member.setDataValue("total_pending_amount", totalPending);
+            member.setDataValue("next_payment_date", nextPaymentDate);
+          } else {
+            member.total_pending_amount = totalPending;
+            member.next_payment_date = nextPaymentDate;
+          }
+        }
+      } catch (optErr) {
+        console.error("Optimization error in getAll:", optErr);
+        // Do not crash, just return members without extra fields
+      }
+    }
+
     return {
       total: count,
       currentPage: page,
@@ -708,16 +790,16 @@ const memberService = {
   },
 
   async getMembersbyuserEmail(email, phone) {
-  // return early if neither provided
-  if (!email && !phone) return null;
+    // return early if neither provided
+    if (!email && !phone) return null;
 
-  const where = email
-    ? { email }
-    : { phone };
+    const where = email
+      ? { email }
+      : { phone };
 
-  const member = await Member.findOne({ where });
-  return member;
-},
+    const member = await Member.findOne({ where });
+    return member;
+  },
 
   /**
    * ✅ Restore a deactivated member
