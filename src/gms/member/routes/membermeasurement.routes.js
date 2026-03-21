@@ -1,6 +1,7 @@
 import express from "express";
 import membermeasurementController from "../controller/membermeasurement.contrroller.js";
 import { verifyToken } from "../../../middleware/auth.js";
+import { attachCompany  } from "../../../middleware/company.middleware.js";
 import { validate } from "../../../middleware/validate.js";
 import {
   createMemberMeasurementSchema,
@@ -15,7 +16,7 @@ const router = express.Router();
  */
 router.post(
   "/membermeasurement",
-  verifyToken(),
+  attachCompany (),
   validate(createMemberMeasurementSchema),
   membermeasurementController.create
 );
@@ -26,7 +27,7 @@ router.post(
  */
 router.get(
   "/membermeasurement",
-  verifyToken(),
+  attachCompany (),
   membermeasurementController.getAll
 );
 
@@ -36,7 +37,7 @@ router.get(
  */
 router.get(
   "/membermeasurement/:id",
-  verifyToken(),
+  attachCompany (),
   membermeasurementController.getById
 );
 
@@ -46,7 +47,7 @@ router.get(
  */
 router.get(
   "/membermeasurement/member/:member_id",
-  verifyToken(),
+  attachCompany (),
   membermeasurementController.getByMemberId
 );
 
@@ -56,7 +57,7 @@ router.get(
  */
 router.put(
   "/membermeasurement/:id",
-  verifyToken(["Admin", "Super Admin"]),
+  attachCompany (["Admin", "Super Admin"]),
   validate(updateMemberMeasurementSchema),
   membermeasurementController.update
 );
@@ -67,7 +68,7 @@ router.put(
  */
 router.delete(
   "/membermeasurement/:id",
-  verifyToken(["Admin", "Super Admin"]),
+  attachCompany (["Admin", "Super Admin"]),
   membermeasurementController.delete
 );
 
@@ -77,7 +78,7 @@ router.delete(
  */
 router.patch(
   "/membermeasurement/:id/restore",
-  verifyToken(["Admin", "Super Admin"]),
+  attachCompany (["Admin", "Super Admin"]),
   membermeasurementController.restore
 );
 

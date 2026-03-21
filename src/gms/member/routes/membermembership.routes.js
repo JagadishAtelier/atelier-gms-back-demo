@@ -1,6 +1,7 @@
 import express from "express";
 import membermembershipController from "../controller/membermembership.controller.js";
 import { verifyToken } from "../../../middleware/auth.js";
+import { attachCompany  } from "../../../middleware/company.middleware.js";
 import { validate } from "../../../middleware/validate.js";
 import {
   createMemberMembershipSchema,
@@ -15,7 +16,7 @@ const router = express.Router();
  */
 router.post(
   "/membermembership",
-  verifyToken(["Admin", "Super Admin"]),
+  attachCompany(["Admin", "Super Admin"]),
   validate(createMemberMembershipSchema),
   membermembershipController.create
 );
@@ -25,7 +26,7 @@ router.post(
  */
 router.get(
   "/membermembership",
-  verifyToken(),
+  attachCompany(),
   membermembershipController.getAll
 );
 
@@ -34,7 +35,7 @@ router.get(
  */
 router.get(
   "/membermembership/:id",
-  verifyToken(),
+  attachCompany(),
   membermembershipController.getById
 );
 
@@ -43,7 +44,7 @@ router.get(
  */
 router.put(
   "/membermembership/:id",
-  verifyToken(["Admin", "Super Admin"]),
+  attachCompany(["Admin", "Super Admin"]),
   validate(updateMemberMembershipSchema),
   membermembershipController.update
 );
@@ -53,7 +54,7 @@ router.put(
  */
 router.delete(
   "/membermembership/:id",
-  verifyToken(["Admin", "Super Admin"]),
+  attachCompany(["Admin", "Super Admin"]),
   membermembershipController.delete
 );
 
@@ -62,7 +63,7 @@ router.delete(
  */
 router.patch(
   "/membermembership/:id/restore",
-  verifyToken(["Admin", "Super Admin"]),
+  attachCompany(["Admin", "Super Admin"]),
   membermembershipController.restore
 );
 
@@ -71,7 +72,7 @@ router.patch(
  */
 router.get(
   "/membermembership/member/:member_id/active",
-  verifyToken(),
+  attachCompany(),
   membermembershipController.getActiveByMemberId
 );
 
@@ -80,7 +81,7 @@ router.get(
  */
 router.get(
   "/membermembership/member/:member_id/all",
-  verifyToken(),
+  attachCompany(),
   membermembershipController.getAllByMemberId
 );
 
@@ -89,7 +90,7 @@ router.get(
  */
 router.get(
   "/membermembership/member/:member_id/pending",
-  verifyToken(),
+  attachCompany(),
   membermembershipController.getPendingAmountByMemberId
 );
 
@@ -98,7 +99,7 @@ router.get(
  */
 router.get(
   "/membermembership/member/:member_id/next-payment",
-  verifyToken(),
+  attachCompany(),
   membermembershipController.getNextPaymentDateByMemberId
 );
 

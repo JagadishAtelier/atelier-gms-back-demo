@@ -30,7 +30,7 @@ const membermembershipController = {
    */
   async getAll(req, res) {
     try {
-      const memberships = await membermembershipService.getAll(req.query);
+      const memberships = await membermembershipService.getAll(req.query, req.user);
       return res.sendSuccess(memberships, "Member memberships fetched successfully");
     } catch (error) {
       return res.sendError(error.message || "Failed to fetch member memberships");
@@ -43,7 +43,7 @@ const membermembershipController = {
   async getById(req, res) {
     try {
       const { id } = req.params;
-      const record = await membermembershipService.getById(id);
+      const record = await membermembershipService.getById(id, req.user);
       return res.sendSuccess(record, "Member membership fetched successfully");
     } catch (error) {
       return res.sendError(error.message || "Failed to fetch member membership");
@@ -104,7 +104,7 @@ const membermembershipController = {
       if (!member_id) return res.sendError("member_id is required");
 
       const memberships =
-        await membermembershipService.getActiveMembershipsByMemberId(member_id);
+        await membermembershipService.getActiveMembershipsByMemberId(member_id,req.user);
 
       return res.sendSuccess(memberships, "Active memberships fetched successfully");
     } catch (error) {
@@ -121,7 +121,7 @@ const membermembershipController = {
       if (!member_id) return res.sendError("member_id is required");
 
       const memberships =
-        await membermembershipService.getallMenbershipsByMemberId(member_id);
+        await membermembershipService.getallMenbershipsByMemberId(member_id,req.user);
 
       return res.sendSuccess(memberships, "All memberships fetched successfully");
     } catch (error) {
@@ -145,7 +145,8 @@ const membermembershipController = {
       const result =
         await membermembershipService.getPendingAmountByMemberId(
           member_id,
-          includeInactive
+          includeInactive,
+          req.user
         );
 
       return res.sendSuccess(
@@ -165,7 +166,7 @@ const membermembershipController = {
       if (!member_id) return res.sendError("member_id is required");
 
       const result =
-        await membermembershipService.getNextPaymentDateByMemberId(member_id);
+        await membermembershipService.getNextPaymentDateByMemberId(member_id,req.user);
 
       return res.sendSuccess(
         result,

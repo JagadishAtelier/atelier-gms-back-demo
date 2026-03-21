@@ -17,7 +17,7 @@ const membermeasurementController = {
       data.created_by = req.user?.id;
       data.created_by_name = req.user?.username;
       data.created_by_email = req.user?.email;
-
+data.company_id = req.company_id;
       const result = await membermeasurementService.create(data, req.user);
       return res.sendSuccess(result, "Member measurement added successfully");
     } catch (error) {
@@ -30,7 +30,10 @@ const membermeasurementController = {
    */
   async getAll(req, res) {
     try {
-      const measurements = await membermeasurementService.getAll(req.query);
+    const measurements = await membermeasurementService.getAll({
+      ...req.query,
+      company_id: req.company_id, // ✅ add this
+    });
       return res.sendSuccess(measurements, "Member measurements fetched successfully");
     } catch (error) {
       return res.sendError(error.message || "Failed to fetch member measurements");
@@ -43,7 +46,7 @@ const membermeasurementController = {
   async getById(req, res) {
     try {
       const { id } = req.params;
-      const record = await membermeasurementService.getById(id);
+      const record = await membermeasurementService.getById(id, req.company_id);
       return res.sendSuccess(record, "Member measurement fetched successfully");
     } catch (error) {
       return res.sendError(error.message || "Failed to fetch member measurement");
@@ -58,7 +61,10 @@ const membermeasurementController = {
       const { member_id } = req.params;
       if (!member_id) return res.sendError("member_id is required");
 
-      const records = await membermeasurementService.getMeasurementsByMemberId(member_id);
+const records = await membermeasurementService.getMeasurementsByMemberId(
+  member_id,
+  { company_id: req.company_id }
+);
       return res.sendSuccess(records, "Measurements fetched successfully");
     } catch (error) {
       return res.sendError(error.message || "Failed to fetch member measurements");
@@ -78,7 +84,7 @@ const membermeasurementController = {
       data.updated_by_name = req.user?.username;
       data.updated_by_email = req.user?.email;
 
-      const updated = await membermeasurementService.update(id, data, req.user);
+      const updated = await membermeasurementService.update(id, data, req.user, req.company_id);
       return res.sendSuccess(updated, "Member measurement updated successfully");
     } catch (error) {
       return res.sendError(error.message || "Failed to update member measurement");
@@ -91,7 +97,7 @@ const membermeasurementController = {
   async delete(req, res) {
     try {
       const { id } = req.params;
-      const result = await membermeasurementService.delete(id, req.user);
+      const result = await membermeasurementService.delete(id, req.user, false, req.company_id);
       return res.sendSuccess(result, "Member measurement deleted successfully");
     } catch (error) {
       return res.sendError(error.message || "Failed to delete member measurement");
@@ -104,7 +110,7 @@ const membermeasurementController = {
   async restore(req, res) {
     try {
       const { id } = req.params;
-      const result = await membermeasurementService.restore(id, req.user);
+      const result = await membermeasurementService.restore(id, req.user, req.company_id);
       return res.sendSuccess(result, "Member measurement restored successfully");
     } catch (error) {
       return res.sendError(error.message || "Failed to restore member measurement");

@@ -17,7 +17,7 @@ const membershipController = {
       membershipData.created_by = req.user?.id;
       membershipData.created_by_name = req.user?.username;
       membershipData.created_by_email = req.user?.email;
-
+membershipData.company_id = req.company_id;
       const membership = await membershipService.create(membershipData, req.user);
       return res.sendSuccess(membership, "Membership created successfully");
     } catch (error) {
@@ -30,7 +30,11 @@ const membershipController = {
    */
   async getAll(req, res) {
     try {
-      const memberships = await membershipService.getAll(req.query);
+    const memberships = await membershipService.getAll({
+      ...req.query,
+      company_id: req.company_id, // ✅ inject
+    });
+
       return res.sendSuccess(memberships, "Memberships fetched successfully");
     } catch (error) {
       return res.sendError(error.message || "Failed to fetch memberships");
@@ -43,7 +47,7 @@ const membershipController = {
   async getById(req, res) {
     try {
       const { id } = req.params;
-      const membership = await membershipService.getById(id);
+      const membership = await membershipService.getById(id, req.company_id);
       return res.sendSuccess(membership, "Membership fetched successfully");
     } catch (error) {
       return res.sendError(error.message || "Failed to fetch membership");
@@ -62,7 +66,7 @@ const membershipController = {
       data.updated_by_name = req.user?.username;
       data.updated_by_email = req.user?.email;
 
-      const updatedMembership = await membershipService.update(id, data, req.user);
+      const updatedMembership = await membershipService.update(id, data, req.user, req.company_id);
       return res.sendSuccess(updatedMembership, "Membership updated successfully");
     } catch (error) {
       return res.sendError(error.message || "Failed to update membership");
@@ -75,7 +79,7 @@ const membershipController = {
   async delete(req, res) {
     try {
       const { id } = req.params;
-      const result = await membershipService.delete(id, req.user);
+      const result = await membershipService.delete(id, req.user, false, req.company_id);
       return res.sendSuccess(result, "Membership deleted successfully");
     } catch (error) {
       return res.sendError(error.message || "Failed to delete membership");
@@ -88,7 +92,7 @@ const membershipController = {
   async restore(req, res) {
     try {
       const { id } = req.params;
-      const result = await membershipService.restore(id, req.user);
+      const result = await membershipService.restore(id, req.user, req.company_id);
       return res.sendSuccess(result, "Membership restored successfully");
     } catch (error) {
       return res.sendError(error.message || "Failed to restore membership");

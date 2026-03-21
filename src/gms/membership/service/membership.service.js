@@ -42,9 +42,12 @@ const membershipService = {
       is_active,
       sort_by = "createdAt",
       sort_order = "DESC",
+      company_id
     } = options;
 
-    const where = {};
+    const where = {
+      company_id, // ✅ enforce company filter
+    };
 
     if (typeof is_active !== "undefined") where.is_active = is_active;
 
@@ -75,8 +78,11 @@ const membershipService = {
   /**
    * ✅ Get membership by ID
    */
-  async getById(id) {
-    const membership = await Membership.findByPk(id);
+  async getById(id, company_id) {
+    const membership = await Membership.findOne({
+      where: { id, company_id },
+    });
+
     if (!membership) throw new Error("Membership not found");
     return membership;
   },
@@ -84,8 +90,10 @@ const membershipService = {
   /**
    * ✅ Update membership
    */
-  async update(id, data, user) {
-    const membership = await Membership.findByPk(id);
+  async update(id, data, user, company_id) {
+    const membership = await Membership.findOne({
+      where: { id, company_id },
+    });
     if (!membership) throw new Error("Membership not found");
 
     await membership.update({
@@ -101,8 +109,10 @@ const membershipService = {
   /**
    * ✅ Soft delete or permanently delete membership
    */
-  async delete(id, user, hardDelete = false) {
-    const membership = await Membership.findByPk(id);
+  async delete(id, user, hardDelete = false, company_id) {
+    const membership = await Membership.findOne({
+      where: { id, company_id },
+    });
     if (!membership) throw new Error("Membership not found");
 
     if (hardDelete) {
@@ -123,8 +133,10 @@ const membershipService = {
   /**
    * ✅ Restore deactivated membership
    */
-  async restore(id, user) {
-    const membership = await Membership.findByPk(id);
+  async restore(id, user, company_id) {
+    const membership = await Membership.findOne({
+      where: { id, company_id },
+    });
     if (!membership) throw new Error("Membership not found");
 
     await membership.update({

@@ -29,6 +29,7 @@ const memberMeasurementService = {
       const record = await Membermeasurement.create({
         id: uuidv4(),
         member_id: data.member_id,
+        company_id: data.company_id,
         height: height !== null ? height : null,
         weight: weight !== null ? weight : null,
         measurement_date: measurementDate,
@@ -64,7 +65,9 @@ const memberMeasurementService = {
       } = options;
 
       const where = {};
-
+if (options.company_id) {
+  where.company_id = options.company_id; // ✅ REQUIRED
+}
       if (typeof is_active !== "undefined") where.is_active = is_active;
       if (member_id) where.member_id = member_id;
 
@@ -128,11 +131,12 @@ const memberMeasurementService = {
   /**
    * ✅ Get measurement by ID
    */
-  async getById(id) {
+  async getById(id,company_id) {
     try {
-      const record = await Membermeasurement.findByPk(id, {
-        include: [{ model: Member, attributes: ["id", "name", "email", "phone"] }],
-      });
+const record = await Membermeasurement.findOne({
+  where: { id, company_id }, // ✅ correct
+  include: [{ model: Member, attributes: ["id", "name", "email", "phone"] }],
+});
       if (!record) throw new Error("Measurement record not found");
       return record;
     } catch (error) {
@@ -144,9 +148,11 @@ const memberMeasurementService = {
   /**
    * ✅ Update a measurement record
    */
-  async update(id, data, user) {
+  async update(id, data, user, company_id) {
     try {
-      const record = await Membermeasurement.findByPk(id);
+        const record = await Membermeasurement.findOne({
+    where: { id, company_id }, // ✅ enforce
+  });
       if (!record) throw new Error("Measurement record not found");
 
       const updatePayload = {};
@@ -175,9 +181,11 @@ const memberMeasurementService = {
   /**
    * ✅ Soft delete (deactivate) or hard delete a measurement
    */
-  async delete(id, user, hardDelete = false) {
+  async delete(id, user, hardDelete = false,company_id) {
     try {
-      const record = await Membermeasurement.findByPk(id);
+        const record = await Membermeasurement.findOne({
+    where: { id, company_id },
+  });
       if (!record) throw new Error("Measurement record not found");
 
       if (hardDelete) {
@@ -202,9 +210,11 @@ const memberMeasurementService = {
   /**
    * ✅ Restore a deactivated measurement
    */
-  async restore(id, user) {
+  async restore(id, user,company_id) {
     try {
-      const record = await Membermeasurement.findByPk(id);
+        const record = await Membermeasurement.findOne({
+    where: { id, company_id },
+  });
       if (!record) throw new Error("Measurement record not found");
 
       await record.update({
@@ -224,10 +234,10 @@ const memberMeasurementService = {
   /**
    * ✅ Get latest measurement for a member (by measurement_date desc)
    */
-  async getLatestMeasurementByMemberId(member_id) {
+  async getLatestMeasurementByMemberId(member_id,company_id) {
     try {
       const list = await Membermeasurement.findAll({
-        where: { member_id, is_active: true },
+        where: { member_id, is_active: true,company_id },
         order: [["measurement_date", "DESC"]],
         limit: 1,
         include: [{ model: Member, attributes: ["id", "name", "email", "phone"] }],
@@ -249,7 +259,7 @@ const memberMeasurementService = {
       const offset = (page - 1) * limit;
 
       const rows = await Membermeasurement.findAll({
-        where: { member_id },
+        where: { member_id,company_id: options.company_id },
         include: [{ model: Member, as: "member", attributes: ["id", "name", "email", "phone"] }],
         order: [["measurement_date", "DESC"]],
         limit: Number(limit),

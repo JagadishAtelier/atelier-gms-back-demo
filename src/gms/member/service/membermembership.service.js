@@ -27,10 +27,13 @@ const memberMembershipService = {
       if (!membership) throw new Error("Invalid membership_id (Membership not found)");
 
       // Check if member already has memberships
-      const existingMembership = await Membermembership.findOne({
-        where: { member_id: data.member_id },
-        order: [["end_date", "DESC"]],
-      });
+const existingMembership = await Membermembership.findOne({
+  where: {
+    member_id: data.member_id,
+    company_id: user.company_id, // ✅ IMPORTANT
+  },
+  order: [["end_date", "DESC"]],
+});
 
       let startDate;
       const today = new Date();
@@ -75,6 +78,7 @@ const memberMembershipService = {
       const memberMembership = await Membermembership.create({
         id: uuidv4(),
         member_id: data.member_id,
+        company_id: user?.company_id,
         membership_id: data.membership_id,
         payment_status: data.payment_status,
         status: data.status,
@@ -97,7 +101,7 @@ const memberMembershipService = {
     }
   },
 
-  async getAll(options = {}) {
+  async getAll(options = {}, user) {
     const {
       page = 1,
       limit = 10,
@@ -109,7 +113,9 @@ const memberMembershipService = {
       sort_order = "DESC",
     } = options;
 
-    const where = {};
+    const where = {
+      company_id: user.company_id, // ✅ FILTER
+    };
 
     if (typeof is_active !== "undefined") where.is_active = is_active;
     if (payment_status) where.payment_status = payment_status;
@@ -145,8 +151,12 @@ const memberMembershipService = {
   /**
    * ✅ Get Member-Membership by ID
    */
-  async getById(id) {
-    const record = await Membermembership.findByPk(id, {
+  async getById(id, user) {
+    const record = await Membermembership.findOne({
+      where: {
+        id,
+        company_id: user.company_id, // ✅ SECURITY FILTER
+      },
       include: [
         { model: Member, attributes: ["id", "name", "email", "phone"] },
         { model: Membership, attributes: ["id", "name", "price", "duration_months"] },
@@ -165,101 +175,110 @@ const memberMembershipService = {
    *   compute pending_amount from membership.price if pending_amount was null).
    */
   async update(id, data, user) {
-  const record = await Membermembership.findByPk(id, {
-    include: [{ model: Membership, attributes: ["id", "name", "price", "duration_months"] }],
-  });
-  if (!record) throw new Error("Member-Membership record not found");
-
-  // clone incoming data so we can modify
-  const updatePayload = { ...data };
-
-  try {
-    let finalPending = record.pending_amount;
-
-    // ✅ Handle incremental payment logic
-    if (typeof data.amount_paid !== "undefined" && data.amount_paid !== null) {
-      // Treat data.amount_paid as incremental payment
-      const incrementalPayment = Number(data.amount_paid) || 0;
-      const previousPaid = Number(record.amount_paid) || 0;
-      const newPaidTotal = previousPaid + incrementalPayment;
-
-      // Determine base price
-      let basePrice = null;
-      if (record.Membership?.price != null) {
-        basePrice = Number(record.Membership.price) || 0;
-      } else if (record.amount != null) {
-        basePrice = Number(record.amount) || 0;
-      }
-
-      // Determine previous pending
-      let previousPending =
-        record.pending_amount != null ? Number(record.pending_amount) : null;
-
-      if (previousPending === null && basePrice !== null) {
-        previousPending = basePrice - previousPaid;
-        if (previousPending < 0) previousPending = 0;
-      }
-
-      if (previousPending !== null) {
-        finalPending = previousPending - incrementalPayment;
-        if (finalPending < 0) finalPending = 0;
-      } else if (basePrice !== null) {
-        finalPending = basePrice - newPaidTotal;
-        if (finalPending < 0) finalPending = 0;
-      } else {
-        finalPending = null;
-      }
-
-      updatePayload.amount_paid = newPaidTotal;
-      updatePayload.pending_amount = finalPending;
-    }
-
-    // ✅ AUTO-UPDATE payment_status
-    // If pending becomes 0 → PAID
-    if (finalPending !== null && Number(finalPending) === 0) {
-      updatePayload.payment_status = "paid";
-    } 
-    // Optional: if payment done but pending still exists → unpaid / partial
-    else if (typeof finalPending === "number" && finalPending > 0) {
-      updatePayload.payment_status = "unpaid";
-    }
-
-    // Allow updating optional fields
-    if (typeof data.payment_type !== "undefined") {
-      updatePayload.payment_type = data.payment_type;
-    }
-
-    if (typeof data.membership_name !== "undefined") {
-      updatePayload.membership_name = data.membership_name;
-    }
-
-    // audit fields
-    updatePayload.updated_by = user?.id || null;
-    updatePayload.updated_by_name = user?.username || null;
-    updatePayload.updated_by_email = user?.email || null;
-
-    await record.update(updatePayload);
-
-    await record.reload({
-      include: [
-        { model: Member, attributes: ["id", "name", "email", "phone"] },
-        { model: Membership, attributes: ["id", "name", "price", "duration_months"] },
-      ],
+    const record = await Membermembership.findOne({
+      where: {
+        id,
+        company_id: user.company_id,
+      },
+      include: [{ model: Membership, attributes: ["id", "name", "price", "duration_months"] }],
     });
+    if (!record) throw new Error("Member-Membership record not found");
 
-    return record;
-  } catch (error) {
-    console.error("❌ Error updating member-membership:", error.message);
-    throw error;
-  }
-},
+    // clone incoming data so we can modify
+    const updatePayload = { ...data };
+
+    try {
+      let finalPending = record.pending_amount;
+
+      // ✅ Handle incremental payment logic
+      if (typeof data.amount_paid !== "undefined" && data.amount_paid !== null) {
+        // Treat data.amount_paid as incremental payment
+        const incrementalPayment = Number(data.amount_paid) || 0;
+        const previousPaid = Number(record.amount_paid) || 0;
+        const newPaidTotal = previousPaid + incrementalPayment;
+
+        // Determine base price
+        let basePrice = null;
+        if (record.Membership?.price != null) {
+          basePrice = Number(record.Membership.price) || 0;
+        } else if (record.amount != null) {
+          basePrice = Number(record.amount) || 0;
+        }
+
+        // Determine previous pending
+        let previousPending =
+          record.pending_amount != null ? Number(record.pending_amount) : null;
+
+        if (previousPending === null && basePrice !== null) {
+          previousPending = basePrice - previousPaid;
+          if (previousPending < 0) previousPending = 0;
+        }
+
+        if (previousPending !== null) {
+          finalPending = previousPending - incrementalPayment;
+          if (finalPending < 0) finalPending = 0;
+        } else if (basePrice !== null) {
+          finalPending = basePrice - newPaidTotal;
+          if (finalPending < 0) finalPending = 0;
+        } else {
+          finalPending = null;
+        }
+
+        updatePayload.amount_paid = newPaidTotal;
+        updatePayload.pending_amount = finalPending;
+      }
+
+      // ✅ AUTO-UPDATE payment_status
+      // If pending becomes 0 → PAID
+      if (finalPending !== null && Number(finalPending) === 0) {
+        updatePayload.payment_status = "paid";
+      }
+      // Optional: if payment done but pending still exists → unpaid / partial
+      else if (typeof finalPending === "number" && finalPending > 0) {
+        updatePayload.payment_status = "unpaid";
+      }
+
+      // Allow updating optional fields
+      if (typeof data.payment_type !== "undefined") {
+        updatePayload.payment_type = data.payment_type;
+      }
+
+      if (typeof data.membership_name !== "undefined") {
+        updatePayload.membership_name = data.membership_name;
+      }
+
+      // audit fields
+      updatePayload.updated_by = user?.id || null;
+      updatePayload.updated_by_name = user?.username || null;
+      updatePayload.updated_by_email = user?.email || null;
+
+      await record.update(updatePayload);
+
+      await record.reload({
+        include: [
+          { model: Member, attributes: ["id", "name", "email", "phone"] },
+          { model: Membership, attributes: ["id", "name", "price", "duration_months"] },
+        ],
+      });
+
+      return record;
+    } catch (error) {
+      console.error("❌ Error updating member-membership:", error.message);
+      throw error;
+    }
+  },
 
 
   /**
    * ✅ Soft Delete (Deactivate)
    */
   async delete(id, user, hardDelete = false) {
-    const record = await Membermembership.findByPk(id);
+    const record = await Membermembership.findOne({
+      where: {
+        id,
+        company_id: user.company_id,
+      },
+    });
     if (!record) throw new Error("Member-Membership record not found");
 
     if (hardDelete) {
@@ -281,7 +300,12 @@ const memberMembershipService = {
    * ✅ Restore a deactivated record
    */
   async restore(id, user) {
-    const record = await Membermembership.findByPk(id);
+    const record = await Membermembership.findOne({
+      where: {
+        id,
+        company_id: user.company_id,
+      },
+    });
     if (!record) throw new Error("Member-Membership record not found");
 
     await record.update({
@@ -294,13 +318,14 @@ const memberMembershipService = {
     return { message: "Record reactivated successfully" };
   },
 
-  async getActiveMembershipsByMemberId(member_id) {
+  async getActiveMembershipsByMemberId(member_id,user) {
     try {
       const today = new Date();
 
       const activeMemberships = await Membermembership.findAll({
         where: {
           member_id,
+          company_id: user.company_id,
           start_date: { [Op.lte]: today },
           end_date: { [Op.gte]: today },
           is_active: true, // optional if you use a flag
@@ -323,10 +348,10 @@ const memberMembershipService = {
    * Get all memberships by member id (recent first)
    * Note: keeping a properly cased function name for other callers (React code expects getAllMembershipsByMemberId).
    */
-  async getAllMembershipsByMemberId(member_id) {
+  async getAllMembershipsByMemberId(member_id,user) {
     try {
       const memberships = await Membermembership.findAll({
-        where: { member_id },
+        where: { member_id,company_id: user.company_id, },
         include: [
           { model: Member, attributes: ["id", "name", "email", "phone"] },
           { model: Membership, attributes: ["id", "name", "price", "duration_months"] },
@@ -342,9 +367,9 @@ const memberMembershipService = {
   },
 
   // legacy-typo alias for backward compatibility (some code might call this name)
-  async getallMenbershipsByMemberId(member_id) {
-    return this.getAllMembershipsByMemberId(member_id);
-  },
+async getallMenbershipsByMemberId(member_id, user) {
+  return this.getAllMembershipsByMemberId(member_id, user);
+},
 
   /**
    * ✅ Get total pending_amount for a member across their memberships
@@ -354,148 +379,148 @@ const memberMembershipService = {
    *
    * By default only considers records that are is_active === true (you can change this behavior by passing includeInactive = true)
    */
-  async getPendingAmountByMemberId(member_id, includeInactive = false) {
-  try {
-    const whereClause = { member_id };
-    if (!includeInactive) whereClause.is_active = true;
+  async getPendingAmountByMemberId(member_id, includeInactive = false,user) {
+    try {
+      const whereClause = { member_id,company_id: user.company_id, };
+      if (!includeInactive) whereClause.is_active = true;
 
-    const rows = await Membermembership.findAll({
-      where: whereClause,
-      include: [
-        {
-          model: Membership,
-          attributes: ["id", "name", "price"],
-        },
-      ],
-    });
+      const rows = await Membermembership.findAll({
+        where: whereClause,
+        include: [
+          {
+            model: Membership,
+            attributes: ["id", "name", "price"],
+          },
+        ],
+      });
 
-    let totalPending = 0;
-    const pendingBreakdown = [];
+      let totalPending = 0;
+      const pendingBreakdown = [];
 
-    for (const r of rows) {
-      let pendingForThisMembership = 0;
+      for (const r of rows) {
+        let pendingForThisMembership = 0;
 
-      // 1️⃣ If pending_amount already stored, use it
-      if (typeof r.pending_amount !== "undefined" && r.pending_amount !== null) {
-        pendingForThisMembership = Number(r.pending_amount) || 0;
-      } else {
-        // 2️⃣ Otherwise calculate from membership.price - amount_paid
-        const price =
-          r.Membership && r.Membership.price != null
-            ? Number(r.Membership.price) || 0
-            : 0;
+        // 1️⃣ If pending_amount already stored, use it
+        if (typeof r.pending_amount !== "undefined" && r.pending_amount !== null) {
+          pendingForThisMembership = Number(r.pending_amount) || 0;
+        } else {
+          // 2️⃣ Otherwise calculate from membership.price - amount_paid
+          const price =
+            r.Membership && r.Membership.price != null
+              ? Number(r.Membership.price) || 0
+              : 0;
 
-        const paid =
-          typeof r.amount_paid !== "undefined" && r.amount_paid !== null
-            ? Number(r.amount_paid) || 0
-            : 0;
+          const paid =
+            typeof r.amount_paid !== "undefined" && r.amount_paid !== null
+              ? Number(r.amount_paid) || 0
+              : 0;
 
-        pendingForThisMembership = price - paid;
-        if (pendingForThisMembership < 0) pendingForThisMembership = 0;
+          pendingForThisMembership = price - paid;
+          if (pendingForThisMembership < 0) pendingForThisMembership = 0;
+        }
+
+        totalPending += pendingForThisMembership;
+
+        pendingBreakdown.push({
+          member_membership_id: r.id,
+          membership_id: r.membership_id,
+          membership_name: r.membership_name || r.Membership?.name || null,
+          price: r.Membership?.price || null,
+          amount_paid: r.amount_paid || 0,
+          pending_amount: pendingForThisMembership,
+          is_active: r.is_active,
+          start_date: r.start_date,
+          end_date: r.end_date,
+        });
       }
 
-      totalPending += pendingForThisMembership;
-
-      pendingBreakdown.push({
-        member_membership_id: r.id,
-        membership_id: r.membership_id,
-        membership_name: r.membership_name || r.Membership?.name || null,
-        price: r.Membership?.price || null,
-        amount_paid: r.amount_paid || 0,
-        pending_amount: pendingForThisMembership,
-        is_active: r.is_active,
-        start_date: r.start_date,
-        end_date: r.end_date,
-      });
-    }
-
-    return {
-      member_id,
-      total_pending_amount: totalPending,
-      memberships: pendingBreakdown,
-    };
-  } catch (error) {
-    console.error("❌ Error calculating pending amount:", error.message);
-    throw error;
-  }
-},
-
-/**
- * ✅ Get next payment date by member_id
- *
- * Logic:
- * 1. Prefer latest ACTIVE membership (end_date >= today)
- * 2. Else take most recent membership (by end_date)
- * 3. next_payment_date = end_date + 1 day
- */
-async getNextPaymentDateByMemberId(member_id) {
-  try {
-    const today = new Date();
-
-    // Fetch all memberships for this member
-    const rows = await Membermembership.findAll({
-      where: { member_id },
-      order: [["end_date", "DESC"]],
-    });
-
-    if (!rows || rows.length === 0) {
       return {
         member_id,
-        next_payment_date: null,
-        source: "no_memberships",
+        total_pending_amount: totalPending,
+        memberships: pendingBreakdown,
       };
+    } catch (error) {
+      console.error("❌ Error calculating pending amount:", error.message);
+      throw error;
     }
+  },
 
-    // 1️⃣ Find active memberships
-    const activeMemberships = rows.filter(
-      (r) =>
-        r.is_active === true &&
-        r.end_date &&
-        new Date(r.end_date) >= today
-    );
+  /**
+   * ✅ Get next payment date by member_id
+   *
+   * Logic:
+   * 1. Prefer latest ACTIVE membership (end_date >= today)
+   * 2. Else take most recent membership (by end_date)
+   * 3. next_payment_date = end_date + 1 day
+   */
+  async getNextPaymentDateByMemberId(member_id,user) {
+    try {
+      const today = new Date();
 
-    let selectedMembership = null;
-    let source = "latest_membership";
+      // Fetch all memberships for this member
+      const rows = await Membermembership.findAll({
+        where: { member_id,company_id: user.company_id, },
+        order: [["end_date", "DESC"]],
+      });
 
-    if (activeMemberships.length > 0) {
-      // pick the one with latest end_date
-      activeMemberships.sort(
-        (a, b) => new Date(b.end_date) - new Date(a.end_date)
+      if (!rows || rows.length === 0) {
+        return {
+          member_id,
+          next_payment_date: null,
+          source: "no_memberships",
+        };
+      }
+
+      // 1️⃣ Find active memberships
+      const activeMemberships = rows.filter(
+        (r) =>
+          r.is_active === true &&
+          r.end_date &&
+          new Date(r.end_date) >= today
       );
-      selectedMembership = activeMemberships[0];
-      source = "active_membership";
-    } else {
-      // fallback to latest membership
-      selectedMembership = rows[0];
-      source = "latest_membership";
-    }
 
-    if (!selectedMembership || !selectedMembership.end_date) {
+      let selectedMembership = null;
+      let source = "latest_membership";
+
+      if (activeMemberships.length > 0) {
+        // pick the one with latest end_date
+        activeMemberships.sort(
+          (a, b) => new Date(b.end_date) - new Date(a.end_date)
+        );
+        selectedMembership = activeMemberships[0];
+        source = "active_membership";
+      } else {
+        // fallback to latest membership
+        selectedMembership = rows[0];
+        source = "latest_membership";
+      }
+
+      if (!selectedMembership || !selectedMembership.end_date) {
+        return {
+          member_id,
+          next_payment_date: null,
+          source,
+        };
+      }
+
+      // 2️⃣ Next payment = end_date + 1 day
+      const endDate = new Date(selectedMembership.end_date);
+      const nextPaymentDate = new Date(endDate);
+      nextPaymentDate.setDate(nextPaymentDate.getDate() + 1);
+
       return {
         member_id,
-        next_payment_date: null,
+        next_payment_date: nextPaymentDate.toISOString(),
+        based_on_membership_id: selectedMembership.id,
+        membership_name: selectedMembership.membership_name || null,
+        end_date: selectedMembership.end_date,
         source,
       };
+    } catch (error) {
+      console.error("❌ Error fetching next payment date:", error.message);
+      throw error;
     }
-
-    // 2️⃣ Next payment = end_date + 1 day
-    const endDate = new Date(selectedMembership.end_date);
-    const nextPaymentDate = new Date(endDate);
-    nextPaymentDate.setDate(nextPaymentDate.getDate() + 1);
-
-    return {
-      member_id,
-      next_payment_date: nextPaymentDate.toISOString(),
-      based_on_membership_id: selectedMembership.id,
-      membership_name: selectedMembership.membership_name || null,
-      end_date: selectedMembership.end_date,
-      source,
-    };
-  } catch (error) {
-    console.error("❌ Error fetching next payment date:", error.message);
-    throw error;
-  }
-},
+  },
 
 };
 
