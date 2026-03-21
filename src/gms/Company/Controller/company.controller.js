@@ -40,7 +40,18 @@ export const verifyOTPAndCreateCompany = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
-    const { email, otp, company_name, owner_name, phone } = req.body;
+const {
+  email,
+  otp,
+  company_name,
+  owner_name,
+  phone,
+  business_type,
+  gst_number,
+  address,
+  city,
+  state
+} = req.body;
 
     // 🔍 Check OTP
     const record = await OTP.findOne({
@@ -69,16 +80,26 @@ export const verifyOTPAndCreateCompany = async (req, res) => {
     }
 
     // ✅ Create Company
-    const company = await Company.create(
-      {
-        email,
-        company_name,
-        owner_name,
-        phone,
-        demo_expiry: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      },
-      { transaction: t }
-    );
+const company = await Company.create(
+{
+  email,
+  company_name,
+  owner_name,
+  phone,
+  business_type,
+  gst_number,
+  address,
+  city,
+  state,
+
+  demo_expiry: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+
+  // optional audit fields
+  created_by_name: owner_name,
+  created_by_email: email,
+},
+{ transaction: t }
+);
 
     // 🔐 Hash password (phone)
     const hashedPassword = await bcrypt.hash(phone, 10);
