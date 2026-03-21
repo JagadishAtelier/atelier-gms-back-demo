@@ -9,16 +9,20 @@ const memberDashboardService = {
   /**
    * ✅ Get simplified dashboard using member email (token based)
    */
-  async getDashboardByMemberId(userEmail, userPhone) {
+  async getDashboardByMemberId(userEmail, userPhone,companyId) {
   try {
     // ✅ Validate input
     if (!userEmail && !userPhone) {
       throw new Error("Email or phone is required");
     }
+          if (!companyId) {
+        throw new Error("Company ID is missing in token");
+      }
 
     // ✅ Find member by email OR phone
     const member = await Member.findOne({
       where: {
+        company_id: companyId,
         [Op.or]: [
           userEmail ? { email: userEmail } : null,
           userPhone ? { phone: userPhone } : null,
@@ -33,6 +37,7 @@ const memberDashboardService = {
     // ✅ Active membership
     const activeMembership = await Membermembership.findOne({
       where: {
+        company_id: companyId,
         member_id: memberId,
         is_active: true,
         end_date: { [Op.gte]: new Date() },
@@ -50,7 +55,7 @@ const memberDashboardService = {
 
     // ✅ Workout plan
     const workoutPlan = await MemberAssignPlan.findOne({
-      where: { member_id: memberId, is_active: true },
+      where: { member_id: memberId, is_active: true,company_id: companyId, },
       include: [
         {
           model: Plan,
@@ -66,7 +71,7 @@ const memberDashboardService = {
 
     // ✅ Diet plan
     const dietPlan = await MemberAssignPlan.findOne({
-      where: { member_id: memberId, is_active: true },
+      where: { member_id: memberId, is_active: true,company_id: companyId, },
       include: [
         {
           model: Plan,

@@ -778,7 +778,7 @@ async getById(id, company_id) {
   /**
    * ✅ Soft delete or permanently delete a member
    */
-  async delete(id, user, hardDelete = false) {
+  async delete(id, user, hardDelete = false,company_id) {
     const member = await Member.findOne({
   where: { id, company_id }
 });
@@ -799,7 +799,7 @@ async getById(id, company_id) {
     return { message: "Member deactivated successfully" };
   },
 
-  async getMembersbyuserEmail(email, phone) {
+  async getMembersbyuserEmail(email, phone,getMembersbyuserEmail) {
     // return early if neither provided
     if (!email && !phone) return null;
 
@@ -814,7 +814,7 @@ const where = email
   /**
    * ✅ Restore a deactivated member
    */
-  async restore(id, user) {
+  async restore(id, user,company_id) {
     const member = await Member.findOne({
   where: { id, company_id }
 });

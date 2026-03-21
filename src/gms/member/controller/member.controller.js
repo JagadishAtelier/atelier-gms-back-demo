@@ -107,7 +107,7 @@ const result = await memberService.delete(id, req.user, false, req.company_id);
     const email = req.user?.email || null;
     const phone = req.user?.phone || null;
     console.log("Fetching members for email:", req.user);
-    const members = await memberService.getMembersbyuserEmail(email, phone);
+    const members = await memberService.getMembersbyuserEmail(email, phone,req.company_id);
 
     return res.sendSuccess(members, "Members fetched successfully");
   } catch (error) {

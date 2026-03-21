@@ -5,9 +5,9 @@ const memberDashboardController = {
     try {
       const userEmail = req.user?.email || null;
       const userPhone = req.user?.phone || null;
+const companyId = req.company_id;
 
-
-      const dashboard = await memberDashboardService.getDashboardByMemberId(userEmail, userPhone);
+      const dashboard = await memberDashboardService.getDashboardByMemberId(userEmail, userPhone,companyId);
       return res.json(dashboard);
 
     } catch (error) {

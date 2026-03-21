@@ -1,6 +1,7 @@
 import express from "express";
 import memberDashboardController from "../controller/memberdashboard.controller.js";
 import { verifyToken } from "../../../middleware/auth.js";
+import { attachCompany  } from "../../../middleware/company.middleware.js";
 import { validate } from "../../../middleware/validate.js";
 
 const router = express.Router();
@@ -13,6 +14,7 @@ const router = express.Router();
 router.get(
   "/dashboard",
   verifyToken(), // any authenticated user
+  attachCompany(),
   memberDashboardController.getMemberDashboard
 );
 

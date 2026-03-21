@@ -18,25 +18,26 @@ const router = express.Router();
  */
 router.post(
   "/member",
-  attachCompany(["Admin", "Super Admin"]),
+  verifyToken(["Admin", "Super Admin"]),
+  attachCompany(),
   validate(createMemberSchema),
   memberController.create
 );
 
-router.post("/member-bulk-upload", attachCompany(["Admin", "Super Admin"]),
+router.post("/member-bulk-upload", verifyToken(["Admin", "Super Admin"]),attachCompany(),
  upload.single("file"), memberController.bulkUpload);
 
 /**
  * ✅ Get All Members (with filters, pagination)
  * Access: All authenticated users
  */
-router.get("/member", attachCompany(), memberController.getAll);
+router.get("/member", verifyToken(),attachCompany(), memberController.getAll);
 
 /**
  * ✅ Get Member by ID
  * Access: All authenticated users
  */
-router.get("/member/:id", attachCompany(), memberController.getById);
+router.get("/member/:id", verifyToken(),attachCompany(), memberController.getById);
 
 /**
  * ✅ Update Member
@@ -44,6 +45,7 @@ router.get("/member/:id", attachCompany(), memberController.getById);
  */
 router.put(
   "/member/:id",
+  verifyToken(),
   attachCompany(),
   validate(updateMemberSchema),
   memberController.update
@@ -55,12 +57,14 @@ router.put(
  */
 router.delete(
   "/member/:id",
-  attachCompany(["Admin", "Super Admin"]),
+  verifyToken(["Admin", "Super Admin"]),
+  attachCompany(),
   memberController.delete
 );
 
 router.get(
   "/memberbyemail",
+  verifyToken(),
   attachCompany(),
   memberController.getMembersbyEmail
 )
@@ -71,7 +75,8 @@ router.get(
  */
 router.patch(
   "/member/:id/restore",
-  attachCompany(["Admin", "Super Admin"]),
+  verifyToken(["Admin", "Super Admin"]),
+  attachCompany(),
   memberController.restore
 );
 

@@ -14,6 +14,7 @@ const dashboardController = {
       // IMPORTANT: service expects recentMembersLimit
       const stats = await getDashboardStats({
         recentMembersLimit: limit,
+        company_id: req.company_id,
       });
 
       return res.sendSuccess(stats, "Dashboard statistics fetched successfully");
