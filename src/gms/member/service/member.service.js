@@ -799,7 +799,7 @@ async getById(id, company_id) {
     return { message: "Member deactivated successfully" };
   },
 
-  async getMembersbyuserEmail(email, phone,getMembersbyuserEmail) {
+  async getMembersbyuserEmail(email, phone,company_id) {
     // return early if neither provided
     if (!email && !phone) return null;
 

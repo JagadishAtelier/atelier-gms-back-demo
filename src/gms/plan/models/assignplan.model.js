@@ -63,6 +63,10 @@ const AssignPlan = sequelize.define("AssignPlan", {
         type: DataTypes.STRING,
         allowNull: true,
     },
+    company_id: {
+        type: DataTypes.UUID,
+        allowNull: true,
+    },
 }, {
     tableName: "assign_plan",
     timestamps: true,

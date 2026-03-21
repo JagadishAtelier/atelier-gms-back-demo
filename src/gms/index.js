@@ -21,5 +21,6 @@ router.use("/gms", planRoutes);
 router.use("/gms", gymRoutes);
 router.use("/gms", attendanceRoutes);
 router.use("/gms", CompanyRoutes);
+router.use("/gms", productRoutes);
 
 export default router;
