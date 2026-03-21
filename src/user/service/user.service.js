@@ -88,9 +88,9 @@ const userService = {
   /**
    * ✅ Get all active users (can extend later with pagination)
    */
-  async getUsers() {
+  async getUsers(company_id) {
     return await User.findAll({
-      where: { is_active: true, deleted_by: null },
+      where: { company_id,is_active: true, deleted_by: null },
       order: [["createdAt", "DESC"]],
     });
   },
@@ -161,6 +161,7 @@ const userService = {
         username: user.username,
         role: user.role,
         phone: user.phone,
+        company_id: user.company_id,
       },
       SECRET_KEY,
       { expiresIn: "7d" }

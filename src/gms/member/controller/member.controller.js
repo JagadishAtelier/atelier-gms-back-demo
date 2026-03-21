@@ -17,7 +17,7 @@ const memberController = {
       memberData.created_by = req.user?.id;
       memberData.created_by_name = req.user?.username;
       memberData.created_by_email = req.user?.email;
-
+memberData.company_id = req.company_id;
       const member = await memberService.create(memberData, req.user);
       return res.sendSuccess(member, "Member created successfully");
     } catch (error) {
@@ -31,7 +31,7 @@ const memberController = {
    */
   async getAll(req, res) {
     try {
-      const members = await memberService.getAll(req.query);
+      const members = await memberService.getAll(req.query,req.company_id);
       return res.sendSuccess(members, "Members fetched successfully");
     } catch (error) {
       return res.sendError(error.message || "Failed to fetch members");
@@ -47,7 +47,8 @@ const memberController = {
       const result = await memberService.bulkUpload(
         req.file.buffer,
         req.user,
-        true // send emails
+        true, // send emails
+        req.company_id
       );
 
       return res.sendSuccess(result, "Bulk upload completed");
@@ -62,7 +63,7 @@ const memberController = {
   async getById(req, res) {
     try {
       const { id } = req.params;
-      const member = await memberService.getById(id);
+      const member = await memberService.getById(id,req.company_id);
       return res.sendSuccess(member, "Member fetched successfully");
     } catch (error) {
       return res.sendError(error.message || "Failed to fetch member");
@@ -80,7 +81,7 @@ const memberController = {
       data.updated_by = req.user?.id;
       data.updated_by_name = req.user?.username;
       data.updated_by_email = req.user?.email;
-
+data.company_id = req.company_id;
       const updatedMember = await memberService.update(id, data, req.user);
       return res.sendSuccess(updatedMember, "Member updated successfully");
     } catch (error) {
@@ -94,7 +95,7 @@ const memberController = {
   async delete(req, res) {
     try {
       const { id } = req.params;
-      const result = await memberService.delete(id, req.user);
+const result = await memberService.delete(id, req.user, false, req.company_id);
       return res.sendSuccess(result, "Member deleted successfully");
     } catch (error) {
       return res.sendError(error.message || "Failed to delete member");
@@ -120,7 +121,7 @@ const memberController = {
   async restore(req, res) {
     try {
       const { id } = req.params;
-      const result = await memberService.restore(id, req.user);
+const result = await memberService.restore(id, req.user, req.company_id);
       return res.sendSuccess(result, "Member restored successfully");
     } catch (error) {
       return res.sendError(error.message || "Failed to restore member");

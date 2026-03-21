@@ -8,10 +8,10 @@ const Member = sequelize.define("Member", {
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
     },
-    member_no:{
-      type: DataTypes.STRING(20),
-      allowNull: true,
-      unique: true,
+    member_no: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+        unique: true,
     },
     name: {
         type: DataTypes.STRING(100),
@@ -63,8 +63,12 @@ const Member = sequelize.define("Member", {
             key: 'id',
         },
     },
+    company_id: {
+        type: DataTypes.UUID,
+        allowNull: true,
+    },
     payment_status: {
-        type: DataTypes.ENUM('paid', 'unpaid','pending', 'not started'),
+        type: DataTypes.ENUM('paid', 'unpaid', 'pending', 'not started'),
         allowNull: true,
         defaultValue: 'not started',
     },
@@ -73,40 +77,40 @@ const Member = sequelize.define("Member", {
         defaultValue: true,
     },
     created_by: {
-      type: DataTypes.UUID,
-      allowNull: true,
+        type: DataTypes.UUID,
+        allowNull: true,
     },
     updated_by: {
-      type: DataTypes.UUID,
-      allowNull: true,
+        type: DataTypes.UUID,
+        allowNull: true,
     },
     deleted_by: {
-      type: DataTypes.UUID,
-      allowNull: true,
+        type: DataTypes.UUID,
+        allowNull: true,
     },
     created_by_name: {
-      type: DataTypes.STRING,
-      allowNull: true,
+        type: DataTypes.STRING,
+        allowNull: true,
     },
     updated_by_name: {
-      type: DataTypes.STRING,
-      allowNull: true,
+        type: DataTypes.STRING,
+        allowNull: true,
     },
     deleted_by_name: {
-      type: DataTypes.STRING,
-      allowNull: true,
+        type: DataTypes.STRING,
+        allowNull: true,
     },
     created_by_email: {
-      type: DataTypes.STRING,
-      allowNull: true,
+        type: DataTypes.STRING,
+        allowNull: true,
     },
     updated_by_email: {
-      type: DataTypes.STRING,
-      allowNull: true,
+        type: DataTypes.STRING,
+        allowNull: true,
     },
     deleted_by_email: {
-      type: DataTypes.STRING,
-      allowNull: true,
+        type: DataTypes.STRING,
+        allowNull: true,
     },
 }, {
     tableName: "member",

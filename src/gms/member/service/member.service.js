@@ -97,6 +97,7 @@ const memberService = {
       const member = await Member.create({
         id: uuidv4(),
         member_no: memberNo,
+        company_id: user?.company_id,
         ...data,
         created_by: user?.id || null,
         created_by_name: user?.username || null,
@@ -207,7 +208,7 @@ const memberService = {
     }
   },
 
-  async bulkUpload(fileBuffer, user, sendEmail = true) {
+  async bulkUpload(fileBuffer, user, sendEmail = true,company_id) {
     try {
       if (!fileBuffer) throw new Error("File is required");
 
@@ -369,7 +370,7 @@ const memberService = {
               if (row.email) {
                 if (!isValidEmail(row.email)) throw new Error("Invalid email format");
                 const emailExistMember = await Member.findOne({
-                  where: { email: row.email, is_active: 1 },
+                  where: { email: row.email, is_active: 1,company_id },
                   transaction: t,
                 });
                 const emailExistUser = await User.unscoped().findOne({
@@ -389,7 +390,7 @@ const memberService = {
               if (row.phone) {
                 if (!isValidPhone(row.phone)) throw new Error("Invalid phone number");
                 const phoneExistMember = await Member.findOne({
-                  where: { phone: row.phone, is_active: 1 },
+                  where: { phone: row.phone, is_active: 1,company_id },
                   transaction: t,
                 });
                 const phoneExistUser = await User.unscoped().findOne({
@@ -410,6 +411,7 @@ const memberService = {
                 {
                   id: uuidv4(),
                   member_no: memberNo,
+                  company_id: company_id,
                   name: row.name,
                   email: row.email,
                   phone: row.phone,
@@ -494,7 +496,7 @@ const memberService = {
           if (row.email) {
             if (!isValidEmail(row.email)) throw new Error("Invalid email format");
             const existMemberByEmail = await Member.findOne({
-              where: { email: row.email, is_active: 1 },
+              where: { email: row.email, is_active: 1,company_id },
               transaction: t,
             });
             const existUserByEmail = await User.unscoped().findOne({
@@ -535,6 +537,7 @@ const memberService = {
             {
               id: uuidv4(),
               member_no: null,
+              company_id: company_id,
               name: row.name,
               email: row.email,
               phone: row.phone,
@@ -616,7 +619,7 @@ const memberService = {
   /**
    * ✅ Get all members with pagination, search, and filters
    */
-  async getAll(options = {}) {
+  async getAll(options = {},company_id) {
     const {
       page = 1,
       limit = 10,
@@ -628,7 +631,7 @@ const memberService = {
       sort_order = "DESC",
     } = options;
 
-    const where = {};
+    const where = {company_id,};
 
     if (typeof is_active !== "undefined") where.is_active = is_active;
     if (gender) where.gender = gender;
@@ -646,7 +649,7 @@ const memberService = {
     const offset = (page - 1) * limit;
 
     const { count, rows } = await Member.findAndCountAll({
-      where,
+      where: { ...where, company_id },
       limit: Number(limit),
       offset,
       order: [[sort_by, sort_order]],
@@ -744,17 +747,22 @@ const memberService = {
   /**
    * ✅ Get member by ID
    */
-  async getById(id) {
-    const member = await Member.findByPk(id);
-    if (!member) throw new Error("Member not found");
-    return member;
-  },
+async getById(id, company_id) {
+  const member = await Member.findOne({
+    where: { id, company_id } // ✅ secure
+  });
+
+  if (!member) throw new Error("Member not found");
+  return member;
+},
 
   /**
    * ✅ Update member
    */
   async update(id, data, user) {
-    const member = await Member.findByPk(id);
+    const member = await Member.findOne({
+  where: { id, company_id: user.company_id }
+});
     if (!member) throw new Error("Member not found");
 
     await member.update({
@@ -771,7 +779,9 @@ const memberService = {
    * ✅ Soft delete or permanently delete a member
    */
   async delete(id, user, hardDelete = false) {
-    const member = await Member.findByPk(id);
+    const member = await Member.findOne({
+  where: { id, company_id }
+});
     if (!member) throw new Error("Member not found");
 
     if (hardDelete) {
@@ -793,9 +803,9 @@ const memberService = {
     // return early if neither provided
     if (!email && !phone) return null;
 
-    const where = email
-      ? { email }
-      : { phone };
+const where = email
+  ? { email, company_id }
+  : { phone, company_id };
 
     const member = await Member.findOne({ where });
     return member;
@@ -805,7 +815,9 @@ const memberService = {
    * ✅ Restore a deactivated member
    */
   async restore(id, user) {
-    const member = await Member.findByPk(id);
+    const member = await Member.findOne({
+  where: { id, company_id }
+});
     if (!member) throw new Error("Member not found");
 
     await member.update({

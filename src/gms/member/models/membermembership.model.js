@@ -7,6 +7,10 @@ const Membermembership = sequelize.define("Membermembership", {
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
     },
+        company_id: {
+        type: DataTypes.UUID,
+        allowNull: true,
+    },
     member_id: {
         type: DataTypes.UUID,
         allowNull: false,

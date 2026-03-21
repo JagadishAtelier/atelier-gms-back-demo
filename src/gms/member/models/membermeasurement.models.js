@@ -8,6 +8,10 @@ const Membermeasurement = sequelize.define("Membermeasurement", {
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
     },
+        company_id: {
+        type: DataTypes.UUID,
+        allowNull: true,
+    },
     member_id: {
         type: DataTypes.UUID,
         allowNull: false,
