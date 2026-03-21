@@ -9,8 +9,12 @@ const User = sequelize.define("User", {
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true,
   },
-  role:{
-    type: DataTypes.ENUM('Super Admin', 'Admin', 'trainer', 'Accountant', 'user', 'member' ),
+  company_id: {
+    type: DataTypes.UUID,
+    allowNull: true,
+  },
+  role: {
+    type: DataTypes.ENUM('Super Admin', 'Admin', 'trainer', 'Accountant', 'user', 'member'),
     allowNull: false
   },
   username: {
@@ -73,6 +77,10 @@ const User = sequelize.define("User", {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  // Demo / limited access fields
+  demo_start: { type: DataTypes.DATE, allowNull: true },
+  demo_end: { type: DataTypes.DATE, allowNull: true },
+  demo_expired: { type: DataTypes.BOOLEAN, defaultValue: false },
 },
   {
     tableName: "endusers",

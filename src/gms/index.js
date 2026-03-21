@@ -8,6 +8,7 @@ import planRoutes from "./plan/routes/index.js";
 import gymRoutes from "./gym/routes/index.js";
 import attendanceRoutes from "./attendance/routes/index.js";
 import productRoutes from "./product/routes/index.js";
+import CompanyRoutes from "./Company/Routes/company.routes.js";
 
 const router = express.Router();
 
@@ -19,6 +20,6 @@ router.use("/gms", mailRoutes);
 router.use("/gms", planRoutes);
 router.use("/gms", gymRoutes);
 router.use("/gms", attendanceRoutes);
-router.use("/gms", productRoutes);
+router.use("/gms", CompanyRoutes);
 
 export default router;
