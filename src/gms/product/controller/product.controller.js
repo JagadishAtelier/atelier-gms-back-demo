@@ -25,6 +25,7 @@ const productController = {
     }
 
     // audit
+    productData.company_id = req.company_id;
     productData.created_by = req.user?.id;
     productData.created_by_name = req.user?.username;
     productData.created_by_email = req.user?.email;
@@ -39,7 +40,12 @@ const productController = {
 
   async getAll(req, res) {
     try {
-      const products = await productService.getAll(req.query);
+          const options = {
+      ...req.query,
+      company_id: req.company_id, // ✅ inject here
+    };
+
+      const products = await productService.getAll(options);
       return res.sendSuccess(products, "Products fetched successfully");
     } catch (error) {
       return res.sendError(error.message || "Failed to fetch products");
@@ -72,7 +78,7 @@ const productController = {
   async getById(req, res) {
     try {
       const { id } = req.params;
-      const product = await productService.getById(id);
+      const product = await productService.getById(id,req.company_id);
       return res.sendSuccess(product, "Product fetched successfully");
     } catch (error) {
       return res.sendError(error.message || "Failed to fetch product");
@@ -87,7 +93,7 @@ const productController = {
     try {
       const { id } = req.params;
       const data = await parseZodSchema(updateProductSchema, req.body);
-
+data.company_id = req.company_id;
       // If file present, save it and set product_image_url
       if (req.file && req.file.buffer) {
         const uploadsDir = path.resolve(process.cwd(), "public", "uploads", "products");
@@ -107,7 +113,7 @@ const productController = {
       data.updated_by_name = req.user?.username;
       data.updated_by_email = req.user?.email;
 
-      const updatedProduct = await productService.update(id, data, req.user);
+      const updatedProduct = await productService.update(id, data, req.user,req.company_id);
       return res.sendSuccess(
         updatedProduct,
         "Product updated successfully"
@@ -123,7 +129,7 @@ const productController = {
   async delete(req, res) {
     try {
       const { id } = req.params;
-      const result = await productService.delete(id, req.user);
+      const result = await productService.delete(id, req.user,false,req.company_id);
       return res.sendSuccess(result, "Product deleted successfully");
     } catch (error) {
       return res.sendError(error.message || "Failed to delete product");
@@ -136,7 +142,7 @@ const productController = {
   async restore(req, res) {
     try {
       const { id } = req.params;
-      const result = await productService.restore(id, req.user);
+      const result = await productService.restore(id, req.user,req.company_id);
       return res.sendSuccess(result, "Product restored successfully");
     } catch (error) {
       return res.sendError(error.message || "Failed to restore product");

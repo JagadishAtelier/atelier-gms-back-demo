@@ -9,31 +9,31 @@ const productService = {
    * ✅ Create product
    */
   async create(data, user) {
-  try {
-    if (!data.title) throw new Error("title is required");
-    if (!data.price) throw new Error("price is required");
+    try {
+      if (!data.title) throw new Error("title is required");
+      if (!data.price) throw new Error("price is required");
 
-    const product = await Product.create({
-      id: uuidv4(),
-      title: data.title,
-      price: data.price,
-      description: data.description ?? null,
+      const product = await Product.create({
+        id: uuidv4(),
+        title: data.title,
+        price: data.price,
+        description: data.description ?? null,
 
-      // ✅ Store CDN URL ONLY
-      product_image_url: data.product_image_url ?? null,
+        // ✅ Store CDN URL ONLY
+        product_image_url: data.product_image_url ?? null,
+        company_id: data.company_id,
+        is_active: true,
+        created_by: user?.id ?? null,
+        created_by_name: user?.username ?? null,
+        created_by_email: user?.email ?? null,
+      });
 
-      is_active: true,
-      created_by: user?.id ?? null,
-      created_by_name: user?.username ?? null,
-      created_by_email: user?.email ?? null,
-    });
-
-    return product;
-  } catch (error) {
-    console.error("❌ Error creating product:", error.message);
-    throw error;
-  }
-},
+      return product;
+    } catch (error) {
+      console.error("❌ Error creating product:", error.message);
+      throw error;
+    }
+  },
 
 
 
@@ -75,6 +75,7 @@ const productService = {
             id: uuidv4(),
             title: row.title,
             price: row.price,
+            company_id: user?.company_id || null,
             description: row.description || null,
             product_image_url: row.product_image_url || null,
             created_by: user?.id || null,
@@ -111,15 +112,16 @@ const productService = {
       page = 1,
       limit = 10,
       search = "",
-      is_active= true,
+      is_active = true,
       min_price,
       max_price,
       sort_by = "createdAt",
       sort_order = "DESC",
+      company_id,
     } = options;
 
     const where = {};
-
+    if (company_id) where.company_id = company_id;
     if (typeof is_active !== "undefined") where.is_active = is_active;
 
     if (min_price || max_price) {
@@ -155,8 +157,10 @@ const productService = {
   /**
    * ✅ Get product by ID
    */
-  async getById(id) {
-    const product = await Product.findByPk(id);
+  async getById(id, company_id) {
+    const product = await Product.findOne({
+      where: { id, company_id }, // ✅ filter
+    });
     if (!product) throw new Error("Product not found");
     return product;
   },
@@ -164,8 +168,10 @@ const productService = {
   /**
    * ✅ Update product
    */
-  async update(id, data, user) {
-    const product = await Product.findByPk(id);
+  async update(id, data, user, company_id) {
+    const product = await Product.findOne({
+      where: { id, company_id }, // ✅ filter
+    });
     if (!product) throw new Error("Product not found");
 
     await product.update({
@@ -181,8 +187,10 @@ const productService = {
   /**
    * ✅ Delete product (soft / hard)
    */
-  async delete(id, user, hardDelete = false) {
-    const product = await Product.findByPk(id);
+  async delete(id, user, hardDelete = false, company_id) {
+    const product = await Product.findOne({
+      where: { id, company_id },
+    });
     if (!product) throw new Error("Product not found");
 
     if (hardDelete) {
@@ -203,8 +211,10 @@ const productService = {
   /**
    * ✅ Restore product
    */
-  async restore(id, user) {
-    const product = await Product.findByPk(id);
+  async restore(id, user, company_id) {
+    const product = await Product.findOne({
+      where: { id, company_id },
+    });
     if (!product) throw new Error("Product not found");
 
     await product.update({

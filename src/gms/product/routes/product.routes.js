@@ -1,6 +1,7 @@
 import express from "express";
 import productController from "../controller/product.controller.js";
 import { verifyToken } from "../../../middleware/auth.js";
+import { attachCompany } from "../../../middleware/company.middleware.js";
 import { validate } from "../../../middleware/validate.js";
 import {
   createProductSchema,
@@ -21,6 +22,7 @@ const router = express.Router();
 router.post(
   "/product",
   verifyToken(["Admin", "Super Admin"]),
+  attachCompany(),
   ...uploadToSpacesSingle("image"),     // <-- note spread operator to use the array
   validate(createProductSchema),
   productController.create
@@ -34,6 +36,7 @@ router.post(
 router.post(
   "/product-bulk-upload",
   verifyToken(["Admin", "Super Admin"]),
+  attachCompany(),
   productController.bulkUpload
 );
 
@@ -42,6 +45,7 @@ router.post(
  */
 router.get(
   "/product",
+  attachCompany(),
   productController.getAll
 );
 
@@ -50,6 +54,7 @@ router.get(
  */
 router.get(
   "/product/:id",
+  attachCompany(),
   productController.getById
 );
 
@@ -62,6 +67,7 @@ router.get(
 router.put(
   "/product/:id",
   verifyToken(["Admin", "Super Admin"]),
+  attachCompany(),
   ...uploadToSpacesSingle("image"),  // ✅ Upload to DO Spaces
   validate(updateProductSchema),
   productController.update
@@ -73,6 +79,7 @@ router.put(
 router.delete(
   "/product/:id",
   verifyToken(["Admin", "Super Admin"]),
+  attachCompany(),
   productController.delete
 );
 
@@ -82,6 +89,7 @@ router.delete(
 router.patch(
   "/product/:id/restore",
   verifyToken(["Admin", "Super Admin"]),
+  attachCompany(),
   productController.restore
 );
 
