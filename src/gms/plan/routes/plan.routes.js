@@ -1,6 +1,7 @@
 import express from "express";
 import planController from "../controller/plan.controller.js";
 import { verifyToken } from "../../../middleware/auth.js";
+import { attachCompany } from "../../../middleware/company.middleware.js";
 import { validate } from "../../../middleware/validate.js";
 import { createPlanSchema, updatePlanSchema } from "../dto/plan.dto.js";
 
@@ -58,6 +59,7 @@ const optionalUpload = (req, res, next) => {
 router.post(
   "/plan",
   verifyToken(["Admin", "Super Admin"]),
+  attachCompany(),
   validate(createPlanSchema),
   planController.create
 );
@@ -65,12 +67,12 @@ router.post(
 /**
  * ✅ Get All Plans (search, filter, pagination)
  */
-router.get("/plan", verifyToken(), planController.getAll);
+router.get("/plan", verifyToken(),attachCompany(), planController.getAll);
 
 /**
  * ✅ Get Plan by ID
  */
-router.get("/plan/:id", verifyToken(), planController.getById);
+router.get("/plan/:id", verifyToken(),attachCompany(), planController.getById);
 
 /**
  * ✅ Update Plan (optional image upload)
@@ -78,6 +80,7 @@ router.get("/plan/:id", verifyToken(), planController.getById);
 router.put(
   "/plan/:id",
   verifyToken(["Admin", "Super Admin"]),
+  attachCompany(),
   validate(updatePlanSchema),
   planController.update
 );
@@ -88,6 +91,7 @@ router.put(
 router.delete(
   "/plan/:id",
   verifyToken(["Admin", "Super Admin"]),
+  attachCompany(),
   planController.delete
 );
 
@@ -97,6 +101,7 @@ router.delete(
 router.patch(
   "/plan/:id/restore",
   verifyToken(["Admin", "Super Admin"]),
+  attachCompany(),
   planController.restore
 );
 

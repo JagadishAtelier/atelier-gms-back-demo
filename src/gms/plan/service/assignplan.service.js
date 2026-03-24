@@ -19,7 +19,7 @@ async create(data, user) {
 
     // 2️⃣ Find existing assigned plan for this member
     const existingAssignPlan = await AssignPlan.findOne({
-      where: { member_id: data.member_id, is_active: true },
+      where: { member_id: data.member_id, is_active: true,company_id: data.company_id  },
       include: [
         {
           model: Plan,
@@ -38,6 +38,7 @@ async create(data, user) {
         // 4️⃣ Same plan_type → UPDATE instead of creating new
         await existingAssignPlan.update({
           ...data,
+          company_id: existingAssignPlan.company_id,
           updated_by: user?.id || null,
           updated_by_name: user?.username || null,
           updated_by_email: user?.email || null,
@@ -55,6 +56,7 @@ async create(data, user) {
     const assignPlan = await AssignPlan.create({
       id: uuidv4(),
       ...data,
+      company_id: data.company_id,
       created_by: user?.id || null,
       created_by_name: user?.username || null,
       created_by_email: user?.email || null,
@@ -82,12 +84,13 @@ async create(data, user) {
       is_active,
       member_id,
       plan_id,
+      company_id,
       sort_by = "createdAt",
       sort_order = "DESC",
     } = options;
 
     const where = {};
-
+if (company_id) where.company_id = company_id;
     if (typeof is_active !== "undefined") where.is_active = is_active;
     if (member_id) where.member_id = member_id;
     if (plan_id) where.plan_id = plan_id;
@@ -131,8 +134,10 @@ async create(data, user) {
   /**
    * ✅ Get Assigned Plan by ID
    */
-  async getById(id) {
-    const assignPlan = await AssignPlan.findByPk(id);
+  async getById(id,company_id) {
+      const assignPlan = await AssignPlan.findOne({
+    where: { id, company_id } // ✅
+  });
     if (!assignPlan) throw new Error("Assigned plan not found");
     return assignPlan;
   },
@@ -140,8 +145,11 @@ async create(data, user) {
   /**
    * ✅ Update Assigned Plan
    */
-  async update(id, data, user) {
-    const assignPlan = await AssignPlan.findByPk(id);
+  async update(id, data, user,company_id) {
+      const assignPlan = await AssignPlan.findOne({
+    where: { id, company_id } // ✅
+  });
+
     if (!assignPlan) throw new Error("Assigned plan not found");
 
     await assignPlan.update({
@@ -157,8 +165,10 @@ async create(data, user) {
   /**
    * ✅ Soft Delete / Hard Delete Assigned Plan
    */
-  async delete(id, user, hardDelete = false) {
-    const assignPlan = await AssignPlan.findByPk(id);
+  async delete(id, user, hardDelete = false, company_id) {
+      const assignPlan = await AssignPlan.findOne({
+    where: { id, company_id } // ✅
+  });
     if (!assignPlan) throw new Error("Assigned plan not found");
 
     if (hardDelete) {
@@ -179,8 +189,10 @@ async create(data, user) {
   /**
    * ✅ Restore Soft Deleted Assigned Plan
    */
-  async restore(id, user) {
-    const assignPlan = await AssignPlan.findByPk(id);
+  async restore(id, user,company_id) {
+      const assignPlan = await AssignPlan.findOne({
+    where: { id, company_id } // ✅
+  });
     if (!assignPlan) throw new Error("Assigned plan not found");
 
     await assignPlan.update({
@@ -193,10 +205,11 @@ async create(data, user) {
     return { message: "Assigned plan restored successfully" };
   },
 
-  async getassignPlanByMemberId(userEmail) {
+  async getassignPlanByMemberId(userEmail,company_id) {
     const member = await Member.findOne({
       where: {
         email: userEmail,
+        company_id, 
       }
     })
 
@@ -208,6 +221,7 @@ async create(data, user) {
     const assignPlan = await AssignPlan.findAll({
       where: {
         member_id: memberId,
+        company_id,
       },
       include: [
         {

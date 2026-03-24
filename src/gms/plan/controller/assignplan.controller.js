@@ -19,6 +19,7 @@ const assignPlanController = {
       );
 
       // Audit fields
+      assignPlanData.company_id = req.company_id;
       assignPlanData.created_by = req.user?.id ?? null;
       assignPlanData.created_by_name = req.user?.username ?? null;
       assignPlanData.created_by_email = req.user?.email ?? null;
@@ -45,7 +46,10 @@ const assignPlanController = {
    */
   async getAll(req, res) {
     try {
-      const result = await assignPlanService.getAll(req.query);
+          const result = await assignPlanService.getAll({
+      ...req.query,
+      company_id: req.company_id, // ✅ inject here
+    });
       return res.sendSuccess(result, "Assign plans fetched successfully");
     } catch (error) {
       console.error("Error in assignPlanController.getAll:", error);
@@ -59,7 +63,7 @@ const assignPlanController = {
   async getById(req, res) {
     try {
       const { id } = req.params;
-      const result = await assignPlanService.getById(id);
+      const result = await assignPlanService.getById(id,req.company_id);
       return res.sendSuccess(result, "Assign plan fetched successfully");
     } catch (error) {
       console.error("Error in assignPlanController.getById:", error);
@@ -83,7 +87,7 @@ const assignPlanController = {
       validatedData.updated_by_name = req.user?.username ?? null;
       validatedData.updated_by_email = req.user?.email ?? null;
 
-      const updatedPlan = await assignPlanService.update(id, validatedData, req.user);
+      const updatedPlan = await assignPlanService.update(id, validatedData, req.user,req.company_id);
 
       return res.sendSuccess(updatedPlan, "Assign plan updated successfully");
     } catch (error) {
@@ -101,7 +105,12 @@ const assignPlanController = {
   async delete(req, res) {
     try {
       const { id } = req.params;
-      const result = await assignPlanService.delete(id, req.user);
+      const result = await assignPlanService.delete(
+  id,
+  req.user,
+  false,              // hardDelete
+  req.company_id      // company_id
+);
       return res.sendSuccess(result, "Assign plan deleted successfully");
     } catch (error) {
       console.error("Error in assignPlanController.delete:", error);
@@ -115,7 +124,7 @@ const assignPlanController = {
   async restore(req, res) {
     try {
       const { id } = req.params;
-      const result = await assignPlanService.restore(id, req.user);
+      const result = await assignPlanService.restore(id, req.user, req.company_id);
       return res.sendSuccess(result, "Assign plan restored successfully");
     } catch (error) {
       console.error("Error in assignPlanController.restore:", error);
@@ -126,7 +135,10 @@ const assignPlanController = {
   async getAssignedPlansByMemberId(req, res) {
     try {
       const userEmail  = req.user.email;
-      const result = await assignPlanService.getassignPlanByMemberId(userEmail);
+      const result = await assignPlanService.getassignPlanByMemberId(
+  userEmail,
+  req.company_id
+);
       return res.sendSuccess(result, "Assigned plans fetched successfully");
     } catch (error) {
       console.error("Error in assignPlanController.getAssignedPlansByMemberId:", error);

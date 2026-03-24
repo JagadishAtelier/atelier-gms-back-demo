@@ -1,6 +1,7 @@
 import express from "express";
 import assignPlanController from "../controller/assignplan.controller.js";
 import { verifyToken } from "../../../middleware/auth.js";
+import { attachCompany } from "../../../middleware/company.middleware.js";
 import { validate } from "../../../middleware/validate.js";
 
 import {
@@ -16,6 +17,7 @@ const router = express.Router();
 router.post(
   "/assignplan",
   verifyToken(["Admin", "Super Admin"]),
+  attachCompany(),
   validate(createAssignPlanSchema),
   assignPlanController.create
 );
@@ -23,14 +25,14 @@ router.post(
 /**
  * ✅ Get All Assigned Plans (search, filtering, pagination)
  */
-router.get("/assignplan", verifyToken(), assignPlanController.getAll);
+router.get("/assignplan", verifyToken(),attachCompany(), assignPlanController.getAll);
 
 /**
  * ✅ Get assigned plan by ID
  */
-router.get("/assignplan/:id", verifyToken(), assignPlanController.getById);
+router.get("/assignplan/:id", verifyToken(),attachCompany(), assignPlanController.getById);
 
-router.get("/assignplanbymemberid", verifyToken(), assignPlanController.getAssignedPlansByMemberId );
+router.get("/assignplanbymemberid", verifyToken(),attachCompany(), assignPlanController.getAssignedPlansByMemberId );
 
 /**
  * ✅ Update assigned plan
@@ -38,6 +40,7 @@ router.get("/assignplanbymemberid", verifyToken(), assignPlanController.getAssig
 router.put(
   "/assignplan/:id",
   verifyToken(["Admin", "Super Admin"]),
+  attachCompany(),
   validate(updateAssignPlanSchema),
   assignPlanController.update
 );
@@ -48,6 +51,7 @@ router.put(
 router.delete(
   "/assignplan/:id",
   verifyToken(["Admin", "Super Admin"]),
+  attachCompany(),
   assignPlanController.delete
 );
 
@@ -57,6 +61,7 @@ router.delete(
 router.patch(
   "/assignplan/:id/restore",
   verifyToken(["Admin", "Super Admin"]),
+  attachCompany(),
   assignPlanController.restore
 );
 

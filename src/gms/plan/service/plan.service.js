@@ -16,6 +16,7 @@ const planService = {
       const plan = await Plan.create({
         id: uuidv4(),
         ...data,
+        company_id: data.company_id || user?.company_id || null,
         created_by: user?.id || null,
         created_by_name: user?.username || null,
         created_by_email: user?.email || null,
@@ -31,7 +32,7 @@ const planService = {
   /**
    * ✅ Get all plans with pagination, search & filters
    */
-  async getAll(options = {}) {
+  async getAll(options = {},user) {
     const {
       page = 1,
       limit = 10,
@@ -43,7 +44,9 @@ const planService = {
       sort_order = "DESC",
     } = options;
 
-    const where = {};
+    const where = {
+  company_id: user?.company_id
+};
 
     if (plan_type) where.plan_type = plan_type;
     if (difficulty) where.difficulty = difficulty;
@@ -78,8 +81,13 @@ const planService = {
   /**
    * ✅ Get plan by ID
    */
-  async getById(id) {
-    const plan = await Plan.findByPk(id);
+  async getById(id,user) {
+      const plan = await Plan.findOne({
+    where: {
+      id,
+      company_id: user?.company_id
+    }
+  });
     if (!plan) throw new Error("Plan not found");
     return plan;
   },
@@ -88,7 +96,12 @@ const planService = {
    * ✅ Update plan
    */
   async update(id, data, user) {
-    const plan = await Plan.findByPk(id);
+      const plan = await Plan.findOne({
+    where: {
+      id,
+      company_id: user?.company_id
+    }
+  });
     if (!plan) throw new Error("Plan not found");
 
     await plan.update({
@@ -105,7 +118,12 @@ const planService = {
    * ✅ Soft delete or hard delete plan
    */
   async delete(id, user, hardDelete = false) {
-    const plan = await Plan.findByPk(id);
+      const plan = await Plan.findOne({
+    where: {
+      id,
+      company_id: user?.company_id
+    }
+  });
     if (!plan) throw new Error("Plan not found");
 
     if (hardDelete) {
@@ -127,7 +145,12 @@ const planService = {
    * ✅ Restore soft deleted plan
    */
   async restore(id, user) {
-    const plan = await Plan.findByPk(id);
+      const plan = await Plan.findOne({
+    where: {
+      id,
+      company_id: user?.company_id
+    }
+  });
     if (!plan) throw new Error("Plan not found");
 
     await plan.update({

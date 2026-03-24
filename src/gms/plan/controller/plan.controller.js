@@ -70,7 +70,7 @@ const planController = {
     planData.created_by = req.user?.id ?? null;
     planData.created_by_name = req.user?.username ?? null;
     planData.created_by_email = req.user?.email ?? null;
-
+planData.company_id = req.user?.company_id || req.company_id || null;
     const plan = await planService.create(planData, req.user);
     return res.sendSuccess(plan, "Plan created successfully");
   } catch (error) {
@@ -85,7 +85,7 @@ const planController = {
    */
   async getAll(req, res) {
     try {
-      const plans = await planService.getAll(req.query);
+      const plans = await planService.getAll(req.query,req.user);
       return res.sendSuccess(plans, "Plans fetched successfully");
     } catch (error) {
       console.error("Error in planController.getAll:", error);
@@ -99,7 +99,7 @@ const planController = {
   async getById(req, res) {
     try {
       const { id } = req.params;
-      const plan = await planService.getById(id);
+      const plan = await planService.getById(id,req.user);
       return res.sendSuccess(plan, "Plan fetched successfully");
     } catch (error) {
       console.error("Error in planController.getById:", error);
