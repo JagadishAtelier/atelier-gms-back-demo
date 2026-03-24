@@ -2,6 +2,7 @@ import express from "express";
 import attendanceController from "../controller/attendance.controller.js";
 import { verifyToken } from "../../../middleware/auth.js";
 import { validate } from "../../../middleware/validate.js";
+import { attachCompany } from "../../../middleware/company.middleware.js";
 import {
   createAttendanceSchema,
   updateAttendanceSchema,
@@ -22,6 +23,7 @@ const router = express.Router();
 router.post(
   "/attendance",
   verifyToken(["Admin", "Super Admin"]),
+  attachCompany(),
   validate(createAttendanceSchema),
   attendanceController.create
 );
@@ -33,6 +35,7 @@ router.post(
 router.get(
   "/attendance",
   verifyToken(),
+  attachCompany(),
   attendanceController.getAll
 );
 
@@ -43,6 +46,7 @@ router.get(
 router.get(
   "/attendance/:id",
   verifyToken(),
+  attachCompany(),
   attendanceController.getById
 );
 
@@ -53,6 +57,7 @@ router.get(
 router.put(
   "/attendance/:id",
   verifyToken(["Admin", "Super Admin"]),
+  attachCompany(),
   validate(updateAttendanceSchema),
   attendanceController.update
 );
@@ -64,6 +69,7 @@ router.put(
 router.delete(
   "/attendance/:id",
   verifyToken(["Admin", "Super Admin"]),
+  attachCompany(),
   attendanceController.delete
 );
 
@@ -73,6 +79,7 @@ router.delete(
 router.post(
   "/attendance/signin",
   verifyToken(),
+  attachCompany(),
   attendanceController.signIn
 );
 
@@ -82,6 +89,7 @@ router.post(
 router.post(
   "/attendance/signout",
   verifyToken(),
+  attachCompany(),
   attendanceController.signOut
 );
 
@@ -93,6 +101,7 @@ router.post(
 router.patch(
   "/attendance/:id/restore",
   verifyToken(["Admin", "Super Admin"]),
+  attachCompany(),
   attendanceController.restore
 );
 
@@ -103,6 +112,7 @@ router.patch(
 router.get(
   "/attendance/member/:member_id",
   verifyToken(),
+  attachCompany(),
   attendanceController.getByMemberId
 );
 
@@ -112,6 +122,7 @@ router.get(
 router.get(
   "/attendance/member/:member_id/today",
   verifyToken(),
+  attachCompany(),
   attendanceController.getTodayAttendance
 );
 
@@ -121,6 +132,7 @@ router.get(
 router.get(
   "/attendance/member/:member_id/summary",
   verifyToken(),
+  attachCompany(),
   attendanceController.getSummary
 );
 

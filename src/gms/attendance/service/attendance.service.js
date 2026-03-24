@@ -43,6 +43,7 @@ const attendanceService = {
       const existing = await Attendance.findOne({
         where: {
           member_id: data.member_id,
+          company_id: data.company_id,
           date: {
             [Op.gte]: getStartOfDay(dateOnly),
             [Op.lte]: getEndOfDay(dateOnly),
@@ -57,6 +58,7 @@ const attendanceService = {
       const attendance = await Attendance.create({
         id: uuidv4(),
         member_id: data.member_id,
+        company_id: data.company_id, 
         date: dateOnly,
         sign_in: data.sign_in || null,
         sign_out: data.sign_out || null,
@@ -77,7 +79,7 @@ const attendanceService = {
    * Sign in helper: creates or updates today's attendance for a member with sign_in = now
    */
   // 📌 src/services/attendanceService.js  (BACKEND service)
-async signIn(member_id, sign_in_time) {
+async signIn(member_id, sign_in_time,user) {
   try {
     if (!member_id) throw new Error("member_id is required");
 
@@ -108,6 +110,7 @@ async signIn(member_id, sign_in_time) {
     let attendance = await Attendance.findOne({
       where: {
         member_id,
+        company_id: user?.company_id,
         date: { [Op.gte]: todayStart, [Op.lte]: todayEnd }
       }
     });
@@ -117,6 +120,7 @@ async signIn(member_id, sign_in_time) {
     if (!attendance) {
       attendance = await Attendance.create({
         id: uuidv4(),
+        company_id: user?.company_id,
         member_id,
         date: todayStart,
         sign_in: nowTime,
@@ -152,6 +156,7 @@ async signIn(member_id, sign_in_time) {
       const attendance = await Attendance.findOne({
         where: {
           member_id,
+           company_id: user?.company_id,
           date: { [Op.gte]: todayStart, [Op.lte]: todayEnd },
         },
       });
@@ -189,10 +194,11 @@ async signIn(member_id, sign_in_time) {
       is_active,
       sort_by = "createdAt",
       sort_order = "DESC",
+      company_id 
     } = options;
 
     const where = {};
-
+if (company_id) where.company_id = company_id;
     if (typeof is_active !== "undefined") where.is_active = is_active;
     if (member_id) where.member_id = member_id;
 
@@ -230,10 +236,14 @@ async signIn(member_id, sign_in_time) {
   /**
    * Get attendance by id
    */
-  async getById(id) {
-    const record = await Attendance.findByPk(id, {
-      include: [{ model: Member, attributes: ["id", "name", "email", "phone"] }],
-    });
+  async getById(id,user) {
+  const record = await Attendance.findOne({
+    where: {
+      id,
+      company_id: user?.company_id // ✅ secure filter
+    },
+    include: [{ model: Member, attributes: ["id", "name", "email", "phone"] }],
+  });
     if (!record) throw new Error("Attendance record not found");
     return record;
   },
@@ -242,7 +252,12 @@ async signIn(member_id, sign_in_time) {
    * Update attendance record
    */
   async update(id, data, user) {
-    const record = await Attendance.findByPk(id);
+    const record = await Attendance.findOne({
+  where: {
+    id,
+    company_id: user?.company_id
+  }
+});
     if (!record) throw new Error("Attendance record not found");
 
     // Only allow certain fields to be updated
@@ -264,7 +279,12 @@ async signIn(member_id, sign_in_time) {
    * Soft delete (deactivate) or hard delete
    */
   async delete(id, user, hardDelete = false) {
-    const record = await Attendance.findByPk(id);
+    const record = await Attendance.findOne({
+  where: {
+    id,
+    company_id: user?.company_id
+  }
+});
     if (!record) throw new Error("Attendance record not found");
 
     if (hardDelete) {
@@ -286,7 +306,12 @@ async signIn(member_id, sign_in_time) {
    * Restore a soft-deleted record
    */
   async restore(id, user) {
-    const record = await Attendance.findByPk(id);
+    const record = await Attendance.findOne({
+  where: {
+    id,
+    company_id: user?.company_id
+  }
+});
     if (!record) throw new Error("Attendance record not found");
 
     await record.update({
@@ -302,11 +327,12 @@ async signIn(member_id, sign_in_time) {
   /**
    * Get today's attendance (all members)
    */
-  async getTodayAttendance() {
+  async getTodayAttendance(user) {
     const start = getStartOfDay();
     const end = getEndOfDay();
     const rows = await Attendance.findAll({
       where: {
+        company_id: user?.company_id,
         date: { [Op.gte]: start, [Op.lte]: end },
         is_active: true,
       },
@@ -324,7 +350,10 @@ async signIn(member_id, sign_in_time) {
       const { page = 1, limit = 50, from_date, to_date } = options;
 
       const where = { member_id };
-
+// ✅ filter company
+if (options.company_id) {
+  where.company_id = options.company_id;
+}
       if (from_date && to_date) {
         where.date = { [Op.gte]: getStartOfDay(from_date), [Op.lte]: getEndOfDay(to_date) };
       } else if (from_date) {

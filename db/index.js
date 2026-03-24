@@ -16,7 +16,7 @@
 
 import { sequelize } from "../src/db/index.js";
 
-import assign from "../src/gms/product/models/product.models.js";
+import attendance from "../src/gms/attendance/models/attendance.models.js";
 
 async function syncDatabase() {
   try {
