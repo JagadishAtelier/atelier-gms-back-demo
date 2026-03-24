@@ -110,15 +110,21 @@ const memberService = {
       const plainPassword = String(data.phone);
       const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
-      await User.create({
-        id: uuidv4(),
-        role: "member",
-        username: data.name,
-        email: data.email,
-        phone: data.phone,
-        password: hashedPassword,
-        created_by: user?.id || null,
-      });
+const newUser = await User.create({
+  id: uuidv4(),
+  role: "member",
+  username: data.name,
+  email: data.email,
+  phone: data.phone,
+  password: hashedPassword,
+  company_id: user?.company_id,
+  created_by: user?.id || null,
+});
+
+// 🔥 LINK MEMBER → USER
+await member.update({
+  user_id: newUser.id,
+});
 
       // 3️⃣ Send welcome email with credentials
       try {
@@ -354,7 +360,7 @@ const memberService = {
           if (memberNo) {
             console.log(`Row ${index + 1}: checking member_no ${memberNo}`);
             member = await Member.findOne({
-              where: { member_no: memberNo },
+              where: { member_no: memberNo,company_id },
               transaction: t,
             });
 
@@ -374,7 +380,7 @@ const memberService = {
                   transaction: t,
                 });
                 const emailExistUser = await User.unscoped().findOne({
-                  where: { email: row.email },
+                  where: { email: row.email,company_id },
                   transaction: t,
                 });
                 if (emailExistMember || emailExistUser) {
@@ -394,7 +400,7 @@ const memberService = {
                   transaction: t,
                 });
                 const phoneExistUser = await User.unscoped().findOne({
-                  where: { phone: row.phone },
+                  where: { phone: row.phone,company_id },
                   transaction: t,
                 });
                 if (phoneExistMember || phoneExistUser) {
@@ -431,18 +437,25 @@ const memberService = {
 
               const hashedPassword = await bcrypt.hash(String(row.phone || ""), 10);
 
-              await User.create(
-                {
-                  id: uuidv4(),
-                  role: "member",
-                  username: row.name,
-                  email: row.email,
-                  phone: row.phone,
-                  password: hashedPassword,
-                  created_by: user?.id || null,
-                },
-                { transaction: t }
-              );
+const newUser = await User.create(
+  {
+    id: uuidv4(),
+    role: "member",
+    username: row.name,
+    email: row.email,
+    phone: row.phone,
+    password: hashedPassword,
+    company_id: company_id,
+    created_by: user?.id || null,
+  },
+  { transaction: t }
+);
+
+// 🔥 LINK MEMBER → USER
+await member.update(
+  { user_id: newUser.id },
+  { transaction: t }
+);
             }
 
             // ➕ Add membership if present
@@ -516,7 +529,7 @@ const memberService = {
           if (row.phone) {
             if (!isValidPhone(row.phone)) throw new Error("Invalid phone number");
             const existMemberByPhone = await Member.findOne({
-              where: { phone: row.phone, is_active: 1 },
+              where: { phone: row.phone, is_active: 1,company_id },
               transaction: t,
             });
             const existUserByPhone = await User.unscoped().findOne({
@@ -557,18 +570,25 @@ const memberService = {
 
           const hashedPassword = await bcrypt.hash(String(row.phone || ""), 10);
 
-          await User.create(
-            {
-              id: uuidv4(),
-              role: "member",
-              username: row.name,
-              email: row.email,
-              phone: row.phone,
-              password: hashedPassword,
-              created_by: user?.id || null,
-            },
-            { transaction: t }
-          );
+const newUser = await User.create(
+  {
+    id: uuidv4(),
+    role: "member",
+    username: row.name,
+    email: row.email,
+    phone: row.phone,
+    password: hashedPassword,
+    company_id: company_id,
+    created_by: user?.id || null,
+  },
+  { transaction: t }
+);
+
+// 🔥 LINK MEMBER → USER
+await member.update(
+  { user_id: newUser.id },
+  { transaction: t }
+);
 
           if (row.membership_name) {
             const start = parsedStartDate ? parsedStartDate : new Date();
@@ -759,21 +779,39 @@ async getById(id, company_id) {
   /**
    * ✅ Update member
    */
-  async update(id, data, user) {
-    const member = await Member.findOne({
-  where: { id, company_id: user.company_id }
-});
-    if (!member) throw new Error("Member not found");
+async update(id, data, user) {
+  const member = await Member.findOne({
+    where: { id, company_id: user.company_id }
+  });
 
-    await member.update({
-      ...data,
-      updated_by: user?.id || null,
-      updated_by_name: user?.username || null,
-      updated_by_email: user?.email || null,
-    });
+  if (!member) throw new Error("Member not found");
 
-    return member;
-  },
+  // ✅ Update member first
+  await member.update({
+    ...data,
+    updated_by: user?.id || null,
+    updated_by_name: user?.username || null,
+    updated_by_email: user?.email || null,
+  });
+
+  // ✅ Update linked user using user_id (BEST PRACTICE)
+  if (member.user_id) {
+    await User.update(
+      {
+        username: data.name,
+        email: data.email,
+        phone: data.phone,
+        company_id: user.company_id, // ✅ IMPORTANT
+        updated_by: user?.id || null,
+      },
+      {
+        where: { id: member.user_id },
+      }
+    );
+  }
+
+  return member;
+},
 
   /**
    * ✅ Soft delete or permanently delete a member
