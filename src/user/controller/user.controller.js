@@ -60,6 +60,7 @@ const userController = {
       const payload = {
         ...req.body,
         role: req.body.role,
+        company_id: req.user.company_id,
       };
       const data = registerSchema.body.parse(payload);
       const user = await userService.createUser(data);
@@ -70,7 +71,7 @@ const userController = {
   },
 
   async getUsers(req, res) {
-    const users = await userService.getUsers();
+    const users = await userService.getUsers(req.user.company_id);
     res.json(users);
   },
 

@@ -90,7 +90,7 @@ const userService = {
    */
   async getUsers(company_id) {
     return await User.findAll({
-      where: { company_id,is_active: true, deleted_by: null },
+      where: { company_id, is_active: true, deleted_by: null },
       order: [["createdAt", "DESC"]],
     });
   },
@@ -151,6 +151,66 @@ const userService = {
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) throw new Error("Invalid credentials");
 
+    const now = new Date();
+
+    // ✅ Set demo period on first login
+    if (!user.demo_start) {
+      const demoEnd = new Date();
+      demoEnd.setDate(demoEnd.getDate() + 7);
+
+      await user.update({
+        demo_start: now,
+        demo_end: demoEnd,
+        demo_expired: false,
+      });
+
+      // ✅ NEW: Apply to all users in same company
+      await User.update(
+        {
+          demo_start: now,
+          demo_end: demoEnd,
+          demo_expired: false,
+        },
+        {
+          where: { company_id: user.company_id },
+        }
+      );
+
+      // ✅ ALSO update Members
+      await Member.update(
+        {
+          demo_start: now,
+          demo_end: demoEnd,
+          demo_expired: false,
+        },
+        {
+          where: { company_id: user.company_id },
+        }
+      );
+    } else if (user.demo_end && now > user.demo_end) {
+      if (!user.demo_expired) {
+        // ✅ Expire ALL users in company
+        await User.update(
+          { demo_expired: true },
+          { where: { company_id: user.company_id } }
+        );
+
+        // ✅ Expire ALL members in company
+        await Member.update(
+          { demo_expired: true },
+          { where: { company_id: user.company_id } }
+        );
+      }
+
+      return {
+        demoExpired: true,
+        message: "Your demo period has expired. Please contact support.",
+      };
+    }
+
+    // ✅ Calculate remaining days for frontend
+    const remainingDays = user.demo_end ? Math.ceil((user.demo_end - now) / (1000 * 60 * 60 * 24)) : null;
+
     if (!SECRET_KEY) throw new Error("JWT secret key missing in .env file");
 
     // Create JWT token
@@ -160,8 +220,8 @@ const userService = {
         email: user.email,
         username: user.username,
         role: user.role,
-        phone: user.phone,
         company_id: user.company_id,
+        demo_expired: user.demo_expired,
       },
       SECRET_KEY,
       { expiresIn: "7d" }
@@ -169,13 +229,13 @@ const userService = {
 
     await user.update({ token });
 
-    // Strip password before sending response
     const { password: _, ...userWithoutPassword } = user.get({ plain: true });
 
     return {
       message: `${user.role} ${user.username} Login successful`,
       user: userWithoutPassword,
       token,
+      demo_remaining_days: remainingDays, // ✅ added remaining days
     };
   },
 

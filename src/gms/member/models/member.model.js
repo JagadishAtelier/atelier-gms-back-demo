@@ -112,6 +112,10 @@ const Member = sequelize.define("Member", {
         type: DataTypes.STRING,
         allowNull: true,
     },
+      // Demo / limited access fields
+  demo_start: { type: DataTypes.DATE, allowNull: true },
+  demo_end: { type: DataTypes.DATE, allowNull: true },
+  demo_expired: { type: DataTypes.BOOLEAN, defaultValue: false },
 }, {
     tableName: "member",
     timestamps: true,

@@ -90,7 +90,14 @@ const memberService = {
       for (const field of requiredFields) {
         if (!data[field]) throw new Error(`${field} is required`);
       }
+      // Get admin demo data
+      const adminUser = await User.findByPk(user.id);
 
+      const demoData = {
+        demo_start: adminUser.demo_start,
+        demo_end: adminUser.demo_end,
+        demo_expired: adminUser.demo_expired,
+      };
       const memberNo = await generateMemberNo();
 
       // 1️⃣ Create new member
@@ -99,6 +106,7 @@ const memberService = {
         member_no: memberNo,
         company_id: user?.company_id,
         ...data,
+        ...demoData,
         created_by: user?.id || null,
         created_by_name: user?.username || null,
         created_by_email: user?.email || null,
@@ -110,21 +118,17 @@ const memberService = {
       const plainPassword = String(data.phone);
       const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
-const newUser = await User.create({
-  id: uuidv4(),
-  role: "member",
-  username: data.name,
-  email: data.email,
-  phone: data.phone,
-  password: hashedPassword,
-  company_id: user?.company_id,
-  created_by: user?.id || null,
-});
-
-// 🔥 LINK MEMBER → USER
-await member.update({
-  user_id: newUser.id,
-});
+      await User.create({
+        ...demoData,
+        id: uuidv4(),
+        role: "member",
+        username: data.name,
+        email: data.email,
+        phone: data.phone,
+        password: hashedPassword,
+        company_id: user.company_id,
+        created_by: user?.id || null,
+      });
 
       // 3️⃣ Send welcome email with credentials
       try {
@@ -214,7 +218,7 @@ await member.update({
     }
   },
 
-  async bulkUpload(fileBuffer, user, sendEmail = true,company_id) {
+  async bulkUpload(fileBuffer, user, sendEmail = true, company_id) {
     try {
       if (!fileBuffer) throw new Error("File is required");
 
@@ -360,7 +364,7 @@ await member.update({
           if (memberNo) {
             console.log(`Row ${index + 1}: checking member_no ${memberNo}`);
             member = await Member.findOne({
-              where: { member_no: memberNo,company_id },
+              where: { member_no: memberNo },
               transaction: t,
             });
 
@@ -376,11 +380,11 @@ await member.update({
               if (row.email) {
                 if (!isValidEmail(row.email)) throw new Error("Invalid email format");
                 const emailExistMember = await Member.findOne({
-                  where: { email: row.email, is_active: 1,company_id },
+                  where: { email: row.email, is_active: 1, company_id },
                   transaction: t,
                 });
                 const emailExistUser = await User.unscoped().findOne({
-                  where: { email: row.email,company_id },
+                  where: { email: row.email },
                   transaction: t,
                 });
                 if (emailExistMember || emailExistUser) {
@@ -396,11 +400,11 @@ await member.update({
               if (row.phone) {
                 if (!isValidPhone(row.phone)) throw new Error("Invalid phone number");
                 const phoneExistMember = await Member.findOne({
-                  where: { phone: row.phone, is_active: 1,company_id },
+                  where: { phone: row.phone, is_active: 1, company_id },
                   transaction: t,
                 });
                 const phoneExistUser = await User.unscoped().findOne({
-                  where: { phone: row.phone,company_id },
+                  where: { phone: row.phone },
                   transaction: t,
                 });
                 if (phoneExistMember || phoneExistUser) {
@@ -413,8 +417,17 @@ await member.update({
               }
 
               console.log(`Row ${index + 1}: about to create Member and User`);
+
+              const adminUser = await User.findByPk(user.id);
+
+              const demoData = {
+                demo_start: adminUser.demo_start,
+                demo_end: adminUser.demo_end,
+                demo_expired: adminUser.demo_expired,
+              };
               member = await Member.create(
                 {
+                  ...demoData,
                   id: uuidv4(),
                   member_no: memberNo,
                   company_id: company_id,
@@ -437,25 +450,20 @@ await member.update({
 
               const hashedPassword = await bcrypt.hash(String(row.phone || ""), 10);
 
-const newUser = await User.create(
-  {
-    id: uuidv4(),
-    role: "member",
-    username: row.name,
-    email: row.email,
-    phone: row.phone,
-    password: hashedPassword,
-    company_id: company_id,
-    created_by: user?.id || null,
-  },
-  { transaction: t }
-);
-
-// 🔥 LINK MEMBER → USER
-await member.update(
-  { user_id: newUser.id },
-  { transaction: t }
-);
+              await User.create(
+                {
+                  id: uuidv4(),
+                  role: "member",
+                  username: row.name,
+                  email: row.email,
+                  phone: row.phone,
+                  password: hashedPassword,
+                  created_by: user?.id || null,
+                  ...demoData, // ✅ ADD
+                  company_id,
+                },
+                { transaction: t }
+              );
             }
 
             // ➕ Add membership if present
@@ -509,7 +517,7 @@ await member.update(
           if (row.email) {
             if (!isValidEmail(row.email)) throw new Error("Invalid email format");
             const existMemberByEmail = await Member.findOne({
-              where: { email: row.email, is_active: 1,company_id },
+              where: { email: row.email, is_active: 1, company_id },
               transaction: t,
             });
             const existUserByEmail = await User.unscoped().findOne({
@@ -529,7 +537,7 @@ await member.update(
           if (row.phone) {
             if (!isValidPhone(row.phone)) throw new Error("Invalid phone number");
             const existMemberByPhone = await Member.findOne({
-              where: { phone: row.phone, is_active: 1,company_id },
+              where: { phone: row.phone, is_active: 1 },
               transaction: t,
             });
             const existUserByPhone = await User.unscoped().findOne({
@@ -570,25 +578,18 @@ await member.update(
 
           const hashedPassword = await bcrypt.hash(String(row.phone || ""), 10);
 
-const newUser = await User.create(
-  {
-    id: uuidv4(),
-    role: "member",
-    username: row.name,
-    email: row.email,
-    phone: row.phone,
-    password: hashedPassword,
-    company_id: company_id,
-    created_by: user?.id || null,
-  },
-  { transaction: t }
-);
-
-// 🔥 LINK MEMBER → USER
-await member.update(
-  { user_id: newUser.id },
-  { transaction: t }
-);
+          await User.create(
+            {
+              id: uuidv4(),
+              role: "member",
+              username: row.name,
+              email: row.email,
+              phone: row.phone,
+              password: hashedPassword,
+              created_by: user?.id || null,
+            },
+            { transaction: t }
+          );
 
           if (row.membership_name) {
             const start = parsedStartDate ? parsedStartDate : new Date();
@@ -639,7 +640,7 @@ await member.update(
   /**
    * ✅ Get all members with pagination, search, and filters
    */
-  async getAll(options = {},company_id) {
+  async getAll(options = {}, company_id) {
     const {
       page = 1,
       limit = 10,
@@ -651,7 +652,7 @@ await member.update(
       sort_order = "DESC",
     } = options;
 
-    const where = {company_id,};
+    const where = { company_id, };
 
     if (typeof is_active !== "undefined") where.is_active = is_active;
     if (gender) where.gender = gender;
@@ -767,59 +768,41 @@ await member.update(
   /**
    * ✅ Get member by ID
    */
-async getById(id, company_id) {
-  const member = await Member.findOne({
-    where: { id, company_id } // ✅ secure
-  });
+  async getById(id, company_id) {
+    const member = await Member.findOne({
+      where: { id, company_id } // ✅ secure
+    });
 
-  if (!member) throw new Error("Member not found");
-  return member;
-},
+    if (!member) throw new Error("Member not found");
+    return member;
+  },
 
   /**
    * ✅ Update member
    */
-async update(id, data, user) {
-  const member = await Member.findOne({
-    where: { id, company_id: user.company_id }
-  });
+  async update(id, data, user) {
+    const member = await Member.findOne({
+      where: { id, company_id: user.company_id }
+    });
+    if (!member) throw new Error("Member not found");
 
-  if (!member) throw new Error("Member not found");
+    await member.update({
+      ...data,
+      updated_by: user?.id || null,
+      updated_by_name: user?.username || null,
+      updated_by_email: user?.email || null,
+    });
 
-  // ✅ Update member first
-  await member.update({
-    ...data,
-    updated_by: user?.id || null,
-    updated_by_name: user?.username || null,
-    updated_by_email: user?.email || null,
-  });
-
-  // ✅ Update linked user using user_id (BEST PRACTICE)
-  if (member.user_id) {
-    await User.update(
-      {
-        username: data.name,
-        email: data.email,
-        phone: data.phone,
-        company_id: user.company_id, // ✅ IMPORTANT
-        updated_by: user?.id || null,
-      },
-      {
-        where: { id: member.user_id },
-      }
-    );
-  }
-
-  return member;
-},
+    return member;
+  },
 
   /**
    * ✅ Soft delete or permanently delete a member
    */
-  async delete(id, user, hardDelete = false,company_id) {
+  async delete(id, user, hardDelete = false, company_id) {
     const member = await Member.findOne({
-  where: { id, company_id }
-});
+      where: { id, company_id }
+    });
     if (!member) throw new Error("Member not found");
 
     if (hardDelete) {
@@ -837,13 +820,13 @@ async update(id, data, user) {
     return { message: "Member deactivated successfully" };
   },
 
-  async getMembersbyuserEmail(email, phone,company_id) {
+  async getMembersbyuserEmail(email, phone, company_id) {
     // return early if neither provided
     if (!email && !phone) return null;
 
-const where = email
-  ? { email, company_id }
-  : { phone, company_id };
+    const where = email
+      ? { email, company_id }
+      : { phone, company_id };
 
     const member = await Member.findOne({ where });
     return member;
@@ -852,10 +835,10 @@ const where = email
   /**
    * ✅ Restore a deactivated member
    */
-  async restore(id, user,company_id) {
+  async restore(id, user, company_id) {
     const member = await Member.findOne({
-  where: { id, company_id }
-});
+      where: { id, company_id }
+    });
     if (!member) throw new Error("Member not found");
 
     await member.update({
